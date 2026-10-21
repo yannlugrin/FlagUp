@@ -13,18 +13,20 @@ A recipient is one of the player's characters:
 - **Known**: every character that logged in with StashPost is remembered.
 - **Typed**: a name the player types ("First Surname"), for a character StashPost hasn't seen, such as an alt on another account.
 
+Mail only reaches a character of the same ruleset and faction, so StashPost keeps the characters and rules of each ruleset and faction apart (PvP Alliance, PvP Horde, Normal Horde…). The character being played sees all the rules of its ruleset and faction, with the overrides of every character of it, not only its own; it never sees another ruleset or faction. A typed character belongs to the ruleset and faction of the character that typed it.
+
 Mail never goes to the character being played. Bound items are never sent.
 
 ### Rules
 
-The rules are shared by all the player's characters. They form a tree that follows the game's item categories:
+The rules are shared by the player's characters of one ruleset and faction; each ruleset and faction has its own. They form a tree that follows the game's item categories:
 
 - **Category** (Trade Goods), **subcategory** (Herb), **specific item** (Peacebloom) under its subcategory.
 - **By quality**: a separate branch of rules on a quality, whatever the category (Uncommon to the enchanter).
 
 Each rule holds:
 
-- **Rule**: *Send to* a character, or *Don't send*. The recipient is part of the rule: "Don't send" has none.
+- **Rule**: one dropdown listing the recipients and *Don't send*. Choosing a recipient sends to it; choosing *Don't send* removes the recipient. A new line starts as *Don't send*.
 - **Qualities** (on a category or subcategory): the qualities it applies to, a multi-select (Poor, Common, Uncommon, Rare, Epic, Legendary), all checked by default.
 - **Keep in bags** (on a specific item): how many stay in the bags; only the rest is sent.
 
@@ -48,7 +50,7 @@ A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
 - **Tree** (left): only the lines that have a rule, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in the pane's overrides section (frame 2). The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
-- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), its **Rule** (Send to [character dropdown] / Don't send), its **Qualities** on a category, its **Keep in bags** on an item, and **Remove rule**.
+- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), its **Rule** (one dropdown: the recipients and *Don't send*), its **Qualities** on a category, its **Keep in bags** on an item, and **Remove rule** (frame 9 when an override sends).
 
 ### 2. Rules Window — Character Overrides Section
 
@@ -93,6 +95,15 @@ With automatic sending on (or the send key held while it is off), the panel open
 - Each mail with its recipient and items, marked *Sent*, *Sending…*, *Waiting* or *Failed*. A failed mail shows the game's error in red under it, and sending goes on with the next mail.
 - At the bottom: how many are sent and failed, and **Stop**.
 - Every mail's subject is "StashPost".
+
+### 9. Remove Rule (Dialog)
+
+**Remove rule** on a line that a character overrides to send to a recipient. Without such an override, the line and its overrides are removed at once, without the dialog.
+
+- The text names the characters whose override sends.
+- **Keep as Don't send**: the shared rule becomes *Don't send*, which preserves the overrides that send; the overrides set to *Don't send* are removed. The shared Qualities and Keep in bags stay as they are: the overrides that still send use them.
+- **Remove everything**: the line and all its overrides.
+- **Cancel**: nothing changes.
 
 ## Commands
 
