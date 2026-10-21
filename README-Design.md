@@ -42,17 +42,17 @@ A character can override a shared rule for itself, field by field: the rule (ano
 
 ## Frames
 
-### 1. Rules Window — Tab "Shared"
+### 1. Rules Window
 
 A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
-- **Tree** (left): only the lines that have a rule, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in tab 2. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
-- **Right pane**, tab **Shared**: the selected line's name and path (Trade Goods › Herb), its **Rule** (Send to [character dropdown] / Don't send), its **Qualities** on a category, its **Keep in bags** on an item, and **Remove rule**.
+- **Tree** (left): only the lines that have a rule, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in the pane's overrides section (frame 2). The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
+- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), its **Rule** (Send to [character dropdown] / Don't send), its **Qualities** on a category, its **Keep in bags** on an item, and **Remove rule**.
 
-### 2. Rules Window — Tab "Character overrides"
+### 2. Rules Window — Character Overrides Section
 
-The same window, the right pane on its second tab.
+The bottom section of the right pane, under the shared rule, titled **Character overrides**.
 
 - **Overridden by**: the characters that override the selected rule, as tags; the selected tag's override shows below. A **+** tag opens a small list under it: a field to type a name, then the known characters without an override on this rule.
 - For each field (Rule, Keep in bags, Qualities): a checkbox to override it, the character's value, and the shared value beside it.
@@ -60,8 +60,7 @@ The same window, the right pane on its second tab.
 
 ### 3. Add Item (Dialog)
 
-- **Item ID or link**, with **Add**.
-- **Search by name**: the matching items, with their category.
+- **Item ID or link**, with **Add**: type the item's ID, or shift-click an item to paste its link.
 
 Dropping an item on the rules window does the same without the dialog.
 
@@ -78,7 +77,7 @@ The game's own settings list, laid out like its options (label left, control rig
 
 ### 6. Minimap Button and Add-on Compartment
 
-Left-click on the button, or the compartment entry: open the rules window. Right-click on the button: a menu with **Open** (the rules window) and **Settings** (frame 5).
+The usual add-on minimap button, the one most add-ons show (LibDBIcon). Left-click on the button, or the compartment entry: open the rules window. Right-click on the button: a menu with **Open** (the rules window) and **Settings** (frame 5).
 
 ### 7. Mailbox Side Panel — Preview
 
@@ -104,5 +103,4 @@ With automatic sending on (or the send key held while it is off), the panel open
 ## Open Questions
 
 - An alt on another account can't receive account-bound items: how StashPost knows a typed character is on another account.
-- Search by name: the game can only find items its client already knows (bags, bank, seen this session); to check against the API.
-- Each template named above, the top tabs especially, to check against the Forever UI source.
+- Search by name in Add item, for later: the game finds an item by its exact name only once it has been in the bags or bank this session, and has no search by part of a name; a search would cover a list StashPost builds itself.
