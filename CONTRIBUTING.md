@@ -12,8 +12,15 @@ Open an issue with what you did, what you expected and what happened, and the ru
    ```
    mklink /J "<Forever client>\Interface\AddOns\StashPost" "<clone>"
    ```
-2. Turn on the repository's Git hooks: `git config core.hooksPath .githooks`. Its `pre-push` hook refuses to push a release tag until the Checks have passed on the commit it tags; it needs the [GitHub CLI](https://cli.github.com/) (`gh`), and without it only prints a warning.
-3. Restart the client: `/reload` does not pick up new files.
+2. Fetch the libraries. `Libs/` is not in the repository: the [BigWigs packager](https://github.com/BigWigsMods/packager) builds it from the `externals` in `.pkgmeta`. It needs `git` and `svn` (Subversion). From the repository root:
+   ```
+   mkdir -p .release
+   curl -fsSL -o .release/release.sh https://raw.githubusercontent.com/BigWigsMods/packager/master/release.sh
+   bash .release/release.sh -dlz
+   ```
+   Then link `Libs` to the libraries it built, for example on Windows (cmd): `mklink /J Libs .release\StashPost\Libs`. Running `release.sh -dlz` again refreshes them. Never copy library files into the repository; a new library goes in `.pkgmeta` and `Libs.xml`.
+3. Turn on the repository's Git hooks: `git config core.hooksPath .githooks`. Its `pre-push` hook refuses to push a release tag until the Checks have passed on the commit it tags; it needs the [GitHub CLI](https://cli.github.com/) (`gh`), and without it only prints a warning.
+4. Restart the client: `/reload` does not pick up new files.
 
 ## Checking your change
 

@@ -9,3 +9,5 @@
 ## X-Website: https://github.com/yannlugrin/StashPost
 ## X-Github: https://github.com/yannlugrin/StashPost
 ## X-License: MIT
+
+Libs.xml
