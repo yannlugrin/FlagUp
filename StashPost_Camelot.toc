@@ -1,0 +1,11 @@
+## Interface: 16001
+## Title: StashPost
+## Notes: Mails the items you choose to your alts when you open a mailbox.
+## Notes-frFR: Envoie par courrier les objets choisis à vos personnages quand vous ouvrez une boîte aux lettres.
+## Category: Inventory
+## Category-frFR: Inventaire
+## Author: Mr Caillou
+## Version: @project-version@
+## X-Website: https://github.com/yannlugrin/StashPost
+## X-Github: https://github.com/yannlugrin/StashPost
+## X-License: MIT

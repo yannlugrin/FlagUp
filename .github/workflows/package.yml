@@ -1,0 +1,52 @@
+name: Package and release
+
+on:
+  push:
+    tags:
+      # A version (1.2.3) or a pre-release (1.2.3-beta.1).
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-*"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_TOKEN }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # Release only a commit whose Checks passed on main.
+      - name: Require passing checks
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow checks.yml --commit "$GITHUB_SHA" \
+            --event push --json conclusion --jq '.[0].conclusion')
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::Checks on $GITHUB_SHA: ${conclusion:-not finished or not run}. Push main and wait for them to pass."
+            exit 1
+          fi
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      # The packager uses the whole changelog for CurseForge and the GitHub release: keep only this version's section.
+      - name: Keep this version's changelog
+        run: |
+          version="$GITHUB_REF_NAME"
+          awk -v heading="## [$version]" '
+            index($0, heading) == 1 { found = 1; print; next }
+            found && (/^## \[/ || /^\[[^]]*\]: /) { exit }
+            found { print }
+          ' CHANGELOG.md > CHANGELOG-VERSION.md
+          if ! grep -q '[^[:space:]]' CHANGELOG-VERSION.md; then
+            echo "::error::CHANGELOG.md has no section for $version"
+            exit 1
+          fi
+          mv CHANGELOG-VERSION.md CHANGELOG.md
+      - uses: BigWigsMods/packager@v2

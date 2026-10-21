@@ -1,0 +1,19 @@
+package-as: StashPost
+enable-nolib-creation: no
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+ignore:
+  - .github
+  - .githooks
+  - .gitattributes
+  - .gitignore
+  - .luacheckrc
+  - .pkgmeta
+  - .vscode
+  - CONTRIBUTING.md
+  - README-Design.md
+  - README-Technical.md
+  - README-Testing.md

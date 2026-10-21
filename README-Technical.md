@@ -1,0 +1,24 @@
+# StashPost // Technical Reference
+
+Architecture notes and contribution guidance for developers working on StashPost. For end-user documentation, see [README.md](README.md).
+
+> **Status: in development.** The add-on loads and does nothing yet. Update this file as each part is built.
+
+## File Map
+
+```
+StashPost/
+├── .github/ISSUE_TEMPLATE/
+│   └── bug_report.yml             Bug report form: version, game build, steps, Lua error
+├── .github/workflows/
+│   ├── package.yml                BigWigs packager on tag push: the GitHub release with this version's changelog
+│   └── checks.yml                 luacheck on every push
+├── .githooks/
+│   └── pre-push                   Refuses to push a release tag before its Checks passed
+├── .vscode/
+│   ├── settings.json              Lua language server: Lua 5.1, Ketho WoW API annotations
+│   └── extensions.json            Recommended extensions
+├── .luacheckrc                    Lint config, skips Libs/
+├── .pkgmeta                       Package name; the developer READMEs stripped from the package
+└── StashPost_Camelot.toc          WoW Forever only (interface 16001)
+```

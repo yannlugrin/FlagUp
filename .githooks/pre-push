@@ -1,0 +1,17 @@
+#!/bin/sh
+# Pushing a release tag: only when the Checks passed on main for the commit it tags.
+command -v gh >/dev/null 2>&1 || { echo "pre-push: gh not installed, Checks not verified" >&2; exit 0; }
+
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+    case "$local_ref" in refs/tags/*) ;; *) continue ;; esac
+    [ "$local_sha" = "$zero" ] && continue
+    commit=$(git rev-parse "$local_sha^{commit}")
+    conclusion=$(gh run list --workflow checks.yml --commit "$commit" --event push \
+        --json conclusion --jq '.[0].conclusion')
+    if [ "$conclusion" != "success" ]; then
+        echo "pre-push: Checks on $commit: ${conclusion:-not finished or not run}. Push main and wait for them to pass." >&2
+        exit 1
+    fi
+done
+exit 0

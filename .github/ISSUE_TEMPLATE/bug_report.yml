@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in StashPost doesn't work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The more precise the steps, the faster it gets fixed.
+
+  - type: input
+    id: version
+    attributes:
+      label: StashPost version
+      description: The version shown in the AddOns list at the character selection screen.
+      placeholder: 0.1.0-beta.1
+    validations:
+      required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: Game build
+      description: "Paste the result of `/dump GetBuildInfo()`."
+      placeholder: version, build, date, interface
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, step by step, and the rules involved.
+      placeholder: |
+        1. Add a rule: Herb, send to an alt
+        2. Open a mailbox
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: lua-error
+    attributes:
+      label: Lua error
+      description: The whole error, with its stack, from BugSack or the game's error window (`/console scriptErrors 1` shows them).
+      render: text
+
+  - type: dropdown
+    id: alone
+    attributes:
+      label: With only StashPost enabled
+      description: Disable every other add-on in the AddOns list at the character selection screen, then try again.
+      options:
+        - Not tested
+        - It still happens with only StashPost enabled
+        - It doesn't happen with only StashPost enabled
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: addons
+    attributes:
+      label: Other add-ons
+      description: The add-ons you use that change the interface, the bags or the mailbox (for example EllesmereUI or a bag add-on).
