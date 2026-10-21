@@ -8,7 +8,9 @@ ignore = {
 }
 
 globals = {
+    "UISpecialFrames",
 }
 
 read_globals = {
+    "LibStub", "CreateFrame", "UIParent", "C_AddOns", "EllesmereUI",
 }
