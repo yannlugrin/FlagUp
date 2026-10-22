@@ -16,7 +16,11 @@
     ],
     "Lua.diagnostics.globals": [
         "EllesmereUI",
-        "UISpecialFrames"
+        "UISpecialFrames",
+        "ScrollUtil",
+        "CreateScrollBoxListLinearView",
+        "CreateDataProvider",
+        "ScrollBoxConstants"
     ],
     "Lua.type.weakUnionCheck": true
 }

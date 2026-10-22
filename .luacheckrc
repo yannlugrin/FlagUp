@@ -13,4 +13,6 @@ globals = {
 
 read_globals = {
     "LibStub", "CreateFrame", "UIParent", "C_AddOns", "EllesmereUI",
+    "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "ScrollBoxConstants",
+    "NORMAL_FONT_COLOR", "LIGHTBLUE_FONT_COLOR",
 }
