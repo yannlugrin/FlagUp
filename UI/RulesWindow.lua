@@ -45,6 +45,8 @@ local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-Highlig
 
 local PANE_GAP = 16
 local PANE_PADDING = 12
+-- The pane leaves as much room on the window's right as the tree on its left.
+local PANE_WIDTH = WIDTH - TREE_LEFT - TREE_WIDTH - PANE_GAP - TREE_LEFT
 local FIELD_SPACING = 12
 -- A field's controls start right of its checkbox and label.
 local FIELD_CONTROLS_LEFT = 120
@@ -53,6 +55,9 @@ local INHERITED_ALPHA = 0.5
 local RULE_DROPDOWN_WIDTH = 200
 local QUALITY_COLUMNS, QUALITY_COLUMN_WIDTH = 2, 105
 local KEEP_INPUT_WIDTH = 50
+local TAGS_WIDTH = PANE_WIDTH - 2 * PANE_PADDING
+local TAG_GAP = 6
+local ADD_TAG_WIDTH = 28
 local SKINNED_CHECKBOX_SIZE = 16
 local SKINNED_CHECKBOX_LABEL_GAP = 6
 
@@ -263,7 +268,7 @@ function window:ShowLines(lines)
     tree.ScrollBox:SetDataProvider(CreateDataProvider(lines), ScrollBoxConstants.RetainScrollPosition)
 end
 
--- Right pane: the shared rule ----------------------------------------------------------------------
+-- Right pane -------------------------------------------------------------------------------------
 
 -- The pane starts at the top of the column headers and fills the window's right side.
 local pane = CreateFrame("Frame", nil, window)
@@ -275,13 +280,25 @@ pane.Inset = CreateFrame("Frame", nil, pane, "InsetFrameTemplate")
 pane.Inset:SetPoint("TOPLEFT", -3, 3)
 pane.Inset:SetPoint("BOTTOMRIGHT", 3, -3)
 
-pane.Name = pane:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+-- With no line selected, the pane shows only this text.
+pane.NoLine = pane:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+pane.NoLine:SetPoint("LEFT", PANE_PADDING, 0)
+pane.NoLine:SetPoint("RIGHT", -PANE_PADDING, 0)
+pane.NoLine:SetText(L["Select a line in the tree."])
+
+-- The selected line: its shared rule, then its character overrides.
+local content = CreateFrame("Frame", nil, pane)
+content:SetAllPoints()
+content:Hide()
+pane.Content = content
+
+pane.Name = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 pane.Name:SetPoint("TOPLEFT", PANE_PADDING, -PANE_PADDING)
 pane.Name:SetPoint("RIGHT", -PANE_PADDING, 0)
 pane.Name:SetJustifyH("LEFT")
 pane.Name:SetWordWrap(false)
 
-pane.Path = pane:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+pane.Path = content:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 pane.Path:SetPoint("TOPLEFT", pane.Name, "BOTTOMLEFT", 0, -4)
 pane.Path:SetPoint("RIGHT", -PANE_PADDING, 0)
 pane.Path:SetJustifyH("LEFT")
@@ -293,13 +310,13 @@ pane.Path:SetWordWrap(false)
 
 ---A field of the line: its checkbox and label on the left, its controls on the right.
 ---@class FlagUp.Field: Frame
----@field Checkbox FlagUp.LabeledCheckbox checked: the line sets the field; unchecked: it inherits it
+---@field Checkbox FlagUp.LabeledCheckbox checked: the line, or the character in an override, sets the field; unchecked: it takes it from above
 
 ---@param label string
 ---@param height number the height of its controls
 ---@return FlagUp.Field
 local function createField(label, height)
-    local field = CreateFrame("Frame", nil, pane) --[[@as FlagUp.Field]]
+    local field = CreateFrame("Frame", nil, content) --[[@as FlagUp.Field]]
     field:SetHeight(height)
 
     field.Checkbox = CreateFrame("CheckButton", nil, field, "UICheckButtonTemplate") --[[@as FlagUp.LabeledCheckbox]]
@@ -311,45 +328,127 @@ local function createField(label, height)
     return field
 end
 
-pane.RuleField = createField(L["Rule"], CHECKBOX_SIZE)
-pane.RuleDropdown = CreateFrame("DropdownButton", nil, pane.RuleField, "WowStyle1DropdownTemplate")
-pane.RuleDropdown:SetWidth(RULE_DROPDOWN_WIDTH)
-pane.RuleDropdown:SetPoint("LEFT", pane.RuleField, "TOPLEFT", FIELD_CONTROLS_LEFT, -CHECKBOX_SIZE / 2)
+---A dropdown with WowStyle1DropdownTemplate's text.
+---@class FlagUp.Dropdown: DropdownButton
+---@field OverrideText fun(self: FlagUp.Dropdown, text: string)
 
--- Qualities, on an equipment category or subcategory: one checkbox per quality, two to a row.
+---The fields a line can have, with their controls.
+---@class FlagUp.FieldSet
+---@field RuleField FlagUp.Field
+---@field RuleDropdown FlagUp.Dropdown
+---@field QualitiesField FlagUp.Field on an equipment category or subcategory
+---@field QualityCheckboxes table<integer, FlagUp.LabeledCheckbox> by item quality (Enum.ItemQuality)
+---@field KeepField FlagUp.Field on an item
+---@field KeepInput EditBox
+
 local qualityRows = math.ceil((Enum.ItemQuality.Legendary + 1) / QUALITY_COLUMNS)
-pane.QualitiesField = createField(L["Qualities"], qualityRows * CHECKBOX_SIZE)
 
----@type table<integer, FlagUp.LabeledCheckbox> by item quality (Enum.ItemQuality)
-pane.QualityCheckboxes = {}
-for quality = Enum.ItemQuality.Poor, Enum.ItemQuality.Legendary do
-    local checkbox = CreateFrame("CheckButton", nil, pane.QualitiesField, "UICheckButtonTemplate") --[[@as FlagUp.LabeledCheckbox]]
-    checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
-    local column = quality % QUALITY_COLUMNS
-    local row = math.floor(quality / QUALITY_COLUMNS)
-    checkbox:SetPoint("LEFT", pane.QualitiesField, "TOPLEFT", FIELD_CONTROLS_LEFT - 4 + column * QUALITY_COLUMN_WIDTH,
-        -(row + 0.5) * CHECKBOX_SIZE)
-    checkbox.Text:SetText(_G["ITEM_QUALITY" .. quality .. "_DESC"])
-    checkbox.Text:SetTextColor(ColorManager.GetColorDataForItemQuality(quality).color:GetRGB())
-    pane.QualityCheckboxes[quality] = checkbox
+---@return FlagUp.FieldSet
+local function createFieldSet()
+    local set = {}
+
+    set.RuleField = createField(L["Rule"], CHECKBOX_SIZE)
+    set.RuleDropdown = CreateFrame("DropdownButton", nil, set.RuleField, "WowStyle1DropdownTemplate") --[[@as FlagUp.Dropdown]]
+    set.RuleDropdown:SetWidth(RULE_DROPDOWN_WIDTH)
+    set.RuleDropdown:SetPoint("LEFT", set.RuleField, "TOPLEFT", FIELD_CONTROLS_LEFT, -CHECKBOX_SIZE / 2)
+
+    -- Qualities: one checkbox per quality, two to a row.
+    set.QualitiesField = createField(L["Qualities"], qualityRows * CHECKBOX_SIZE)
+    set.QualityCheckboxes = {}
+    for quality = Enum.ItemQuality.Poor, Enum.ItemQuality.Legendary do
+        local checkbox = CreateFrame("CheckButton", nil, set.QualitiesField, "UICheckButtonTemplate") --[[@as FlagUp.LabeledCheckbox]]
+        checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
+        local column = quality % QUALITY_COLUMNS
+        local row = math.floor(quality / QUALITY_COLUMNS)
+        checkbox:SetPoint("LEFT", set.QualitiesField, "TOPLEFT", FIELD_CONTROLS_LEFT - 4 + column * QUALITY_COLUMN_WIDTH,
+            -(row + 0.5) * CHECKBOX_SIZE)
+        checkbox.Text:SetText(_G["ITEM_QUALITY" .. quality .. "_DESC"])
+        checkbox.Text:SetTextColor(ColorManager.GetColorDataForItemQuality(quality).color:GetRGB())
+        set.QualityCheckboxes[quality] = checkbox
+    end
+
+    -- Keep in bags.
+    set.KeepField = createField(L["Keep"], CHECKBOX_SIZE)
+    set.KeepInput = CreateFrame("EditBox", nil, set.KeepField, "InputBoxTemplate")
+    set.KeepInput:SetSize(KEEP_INPUT_WIDTH, 20)
+    set.KeepInput:SetPoint("LEFT", set.KeepField, "TOPLEFT", FIELD_CONTROLS_LEFT + 6, -CHECKBOX_SIZE / 2)
+    set.KeepInput:SetNumeric(true)
+    set.KeepInput:SetAutoFocus(false)
+    set.KeepInput:SetJustifyH("CENTER")
+
+    return set
 end
 
--- Keep in bags, on an item.
-pane.KeepField = createField(L["Keep"], CHECKBOX_SIZE)
-pane.KeepInput = CreateFrame("EditBox", nil, pane.KeepField, "InputBoxTemplate")
-pane.KeepInput:SetSize(KEEP_INPUT_WIDTH, 20)
-pane.KeepInput:SetPoint("LEFT", pane.KeepField, "TOPLEFT", FIELD_CONTROLS_LEFT + 6, -CHECKBOX_SIZE / 2)
-pane.KeepInput:SetNumeric(true)
-pane.KeepInput:SetAutoFocus(false)
-pane.KeepInput:SetJustifyH("CENTER")
+-- The shared rule.
+pane.Shared = createFieldSet()
 
-pane.RemoveRuleButton = CreateFrame("Button", nil, pane, "UIPanelButtonTemplate")
+pane.RemoveRuleButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 pane.RemoveRuleButton:SetText(L["Remove rule"])
 pane.RemoveRuleButton:SetSize(math.max(BUTTON_WIDTH, pane.RemoveRuleButton:GetTextWidth() + 24), BUTTON_HEIGHT)
 
+-- The character overrides, under the shared rule.
+pane.Divider = content:CreateTexture(nil, "ARTWORK")
+pane.Divider:SetAtlas("Options_HorizontalDivider", true)
+pane.Divider:SetPoint("TOPLEFT", pane.RemoveRuleButton, "BOTTOMLEFT", 0, -FIELD_SPACING)
+pane.Divider:SetPoint("RIGHT", -PANE_PADDING, 0)
+
+pane.OverridesTitle = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+pane.OverridesTitle:SetPoint("TOPLEFT", pane.Divider, "BOTTOMLEFT", 0, -FIELD_SPACING)
+pane.OverridesTitle:SetText(L["Character overrides"])
+
+-- One tag per character, then +; ShowRule lays them out.
+pane.Tags = CreateFrame("Frame", nil, content)
+pane.Tags:SetPoint("TOPLEFT", pane.OverridesTitle, "BOTTOMLEFT", 0, -FIELD_SPACING)
+pane.Tags:SetPoint("RIGHT", -PANE_PADDING, 0)
+
+---@type Button[] reused from one line to the next
+pane.CharacterTags = {}
+
+-- Opens the menu of the known characters without an override on the line.
+pane.AddOverrideButton = CreateFrame("DropdownButton", nil, pane.Tags, "UIPanelButtonTemplate")
+pane.AddOverrideButton:SetText("+")
+pane.AddOverrideButton:SetSize(ADD_TAG_WIDTH, BUTTON_HEIGHT)
+
+-- The selected character's override.
+pane.Override = createFieldSet()
+
+pane.RemoveOverrideButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+pane.RemoveOverrideButton:SetPoint("BOTTOMLEFT", PANE_PADDING, PANE_PADDING)
+pane.RemoveOverrideButton:SetHeight(BUTTON_HEIGHT)
+
+---The tag at this place, created the first time it is needed.
+---@param index integer
+---@return Button
+local function characterTag(index)
+    local tag = pane.CharacterTags[index]
+    if not tag then
+        tag = CreateFrame("Button", nil, pane.Tags, "UIPanelButtonTemplate")
+        tag:SetHeight(BUTTON_HEIGHT)
+        ns.Skin.Apply(function(S) S.Button(tag) end)
+        pane.CharacterTags[index] = tag
+    end
+    return tag
+end
+
+---Places the tags left to right, on as many rows as the pane's width needs, and fits the tags frame to them.
+---@param tags Button[]
+local function layoutTags(tags)
+    local x, y = 0, 0
+    for _, tag in ipairs(tags) do
+        local width = tag:GetWidth()
+        if x > 0 and x + width > TAGS_WIDTH then
+            x, y = 0, y - BUTTON_HEIGHT - TAG_GAP
+        end
+        tag:ClearAllPoints()
+        tag:SetPoint("TOPLEFT", x, y)
+        x = x + width + TAG_GAP
+    end
+    pane.Tags:SetHeight(BUTTON_HEIGHT - y)
+end
+
 ---A field of the selected line, ready to show.
 ---@class FlagUp.FieldDetail
----@field set boolean the line sets the field; false: it inherits it
+---@field set boolean the line, or the character in an override, sets the field; false: it takes it from above
 
 ---@class FlagUp.RuleFieldDetail: FlagUp.FieldDetail
 ---@field text string the rule as the dropdown shows it
@@ -360,7 +459,16 @@ pane.RemoveRuleButton:SetSize(math.max(BUTTON_WIDTH, pane.RemoveRuleButton:GetTe
 ---@class FlagUp.KeepFieldDetail: FlagUp.FieldDetail
 ---@field count integer
 
----The selected line's shared rule, ready to show.
+---The selected line's character overrides, ready to show.
+---@class FlagUp.OverridesDetail
+---@field characters string[] the tags: the character being played, then the characters that override the line
+---@field selected string the character whose override shows
+---@field addable string[] the + menu: the known characters without an override on the line, the one being played left out
+---@field rule FlagUp.RuleFieldDetail the selected character's fields
+---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
+---@field keep FlagUp.KeepFieldDetail? on an item
+
+---The selected line, ready to show.
 ---@class FlagUp.RuleDetail
 ---@field name string
 ---@field path string? the categories above the line (Trade Goods › Herb)
@@ -368,8 +476,9 @@ pane.RemoveRuleButton:SetSize(math.max(BUTTON_WIDTH, pane.RemoveRuleButton:GetTe
 ---@field rule FlagUp.RuleFieldDetail
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
+---@field overrides FlagUp.OverridesDetail
 
----Shows a field as set by the line or inherited: an inherited field's controls are greyed out and disabled.
+---Shows a field as set or taken from above: a field taken from above has its controls greyed out and disabled.
 ---@param field FlagUp.Field
 ---@param detail FlagUp.FieldDetail
 ---@param controls table<integer, Button|EditBox> the quality checkboxes start at 0 (Poor)
@@ -381,9 +490,55 @@ local function showField(field, detail, controls)
     end
 end
 
----Shows a line's shared rule in the pane.
----@param detail FlagUp.RuleDetail
+---Shows the fields the detail has, and hides the others.
+---@param set FlagUp.FieldSet
+---@param detail FlagUp.RuleDetail|FlagUp.OverridesDetail
+---@return FlagUp.Field[] fields the shown fields, in order
+local function showFieldSet(set, detail)
+    set.RuleDropdown:OverrideText(detail.rule.text)
+    showField(set.RuleField, detail.rule, { set.RuleDropdown })
+    local fields = { set.RuleField }
+
+    set.QualitiesField:SetShown(detail.qualities ~= nil)
+    if detail.qualities then
+        for quality, checkbox in pairs(set.QualityCheckboxes) do
+            checkbox:SetChecked(detail.qualities.selected[quality] == true)
+        end
+        showField(set.QualitiesField, detail.qualities, set.QualityCheckboxes)
+        fields[#fields + 1] = set.QualitiesField
+    end
+
+    set.KeepField:SetShown(detail.keep ~= nil)
+    if detail.keep then
+        set.KeepInput:SetText(tostring(detail.keep.count))
+        showField(set.KeepField, detail.keep, { set.KeepInput })
+        fields[#fields + 1] = set.KeepField
+    end
+
+    return fields
+end
+
+---Places the fields one under the other, below `previous`.
+---@param previous Region as wide as the fields
+---@param fields FlagUp.Field[]
+---@return Region last the last field
+local function stackFields(previous, fields)
+    for _, field in ipairs(fields) do
+        field:ClearAllPoints()
+        field:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -FIELD_SPACING)
+        field:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -FIELD_SPACING)
+        previous = field
+    end
+    return previous
+end
+
+---Shows a line in the pane: its shared rule, then its character overrides.
+---@param detail FlagUp.RuleDetail? nil: no line is selected
 function window:ShowRule(detail)
+    pane.NoLine:SetShown(detail == nil)
+    content:SetShown(detail ~= nil)
+    if not detail then return end
+
     pane.Name:SetText(detail.name)
     if detail.color then
         pane.Name:SetTextColor(detail.color:GetRGB())
@@ -392,37 +547,46 @@ function window:ShowRule(detail)
     end
     pane.Path:SetText(detail.path or "")
 
-    pane.RuleDropdown:OverrideText(detail.rule.text)
-    showField(pane.RuleField, detail.rule, { pane.RuleDropdown })
-    local fields = { pane.RuleField }
-
-    pane.QualitiesField:SetShown(detail.qualities ~= nil)
-    if detail.qualities then
-        for quality, checkbox in pairs(pane.QualityCheckboxes) do
-            checkbox:SetChecked(detail.qualities.selected[quality] == true)
-        end
-        showField(pane.QualitiesField, detail.qualities, pane.QualityCheckboxes)
-        fields[#fields + 1] = pane.QualitiesField
-    end
-
-    pane.KeepField:SetShown(detail.keep ~= nil)
-    if detail.keep then
-        pane.KeepInput:SetText(tostring(detail.keep.count))
-        showField(pane.KeepField, detail.keep, { pane.KeepInput })
-        fields[#fields + 1] = pane.KeepField
-    end
-
-    -- The line's fields one under the other, below the path, then Remove rule.
-    ---@type Region
-    local previous = pane.Path
-    for _, field in ipairs(fields) do
-        field:ClearAllPoints()
-        field:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -FIELD_SPACING)
-        field:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -FIELD_SPACING)
-        previous = field
-    end
+    local last = stackFields(pane.Path, showFieldSet(pane.Shared, detail))
     pane.RemoveRuleButton:ClearAllPoints()
-    pane.RemoveRuleButton:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    pane.RemoveRuleButton:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -FIELD_SPACING)
+
+    -- The tags: the selected character's stays highlighted.
+    local overrides = detail.overrides
+    local tags = {}
+    for index, name in ipairs(overrides.characters) do
+        local tag = characterTag(index)
+        tag:SetText(name)
+        tag:SetWidth(tag:GetTextWidth() + 24)
+        if name == overrides.selected then
+            tag:LockHighlight()
+        else
+            tag:UnlockHighlight()
+        end
+        tag:Show()
+        tags[index] = tag
+    end
+    for index = #overrides.characters + 1, #pane.CharacterTags do
+        pane.CharacterTags[index]:Hide()
+    end
+    tags[#tags + 1] = pane.AddOverrideButton
+    layoutTags(tags)
+
+    pane.AddOverrideButton:SetEnabled(#overrides.addable > 0)
+    pane.AddOverrideButton:SetupMenu(function(_, rootDescription)
+        for _, name in ipairs(overrides.addable) do
+            rootDescription:CreateButton(name, function() end)
+        end
+    end)
+
+    stackFields(pane.Tags, showFieldSet(pane.Override, overrides))
+
+    -- Only a character with an override has one to remove.
+    local hasOverride = overrides.rule.set or (overrides.qualities ~= nil and overrides.qualities.set)
+        or (overrides.keep ~= nil and overrides.keep.set)
+    pane.RemoveOverrideButton:SetShown(hasOverride)
+    pane.RemoveOverrideButton:SetText(L["Remove %s's override"]:format(overrides.selected))
+    pane.RemoveOverrideButton:SetWidth(math.max(BUTTON_WIDTH, pane.RemoveOverrideButton:GetTextWidth() + 24))
 end
 
 -- Skin -------------------------------------------------------------------------------------------
@@ -443,14 +607,18 @@ ns.Skin.Apply(function(S)
     S.Inset(tree.Inset)
     S.ScrollBar(tree.ScrollBar)
     S.Inset(pane.Inset)
-    S.Dropdown(pane.RuleDropdown)
-    local checkboxes = { pane.RuleField.Checkbox, pane.QualitiesField.Checkbox, pane.KeepField.Checkbox }
-    for _, checkbox in pairs(pane.QualityCheckboxes) do checkboxes[#checkboxes + 1] = checkbox end
-    for _, checkbox in ipairs(checkboxes) do
-        S.Checkbox(checkbox)
-        checkbox:SetSize(SKINNED_CHECKBOX_SIZE, SKINNED_CHECKBOX_SIZE)
-        checkbox.Text:SetPoint("LEFT", checkbox, "RIGHT", SKINNED_CHECKBOX_LABEL_GAP, 0)
+    for _, set in ipairs({ pane.Shared, pane.Override }) do
+        S.Dropdown(set.RuleDropdown)
+        local checkboxes = { set.RuleField.Checkbox, set.QualitiesField.Checkbox, set.KeepField.Checkbox }
+        for _, checkbox in pairs(set.QualityCheckboxes) do checkboxes[#checkboxes + 1] = checkbox end
+        for _, checkbox in ipairs(checkboxes) do
+            S.Checkbox(checkbox)
+            checkbox:SetSize(SKINNED_CHECKBOX_SIZE, SKINNED_CHECKBOX_SIZE)
+            checkbox.Text:SetPoint("LEFT", checkbox, "RIGHT", SKINNED_CHECKBOX_LABEL_GAP, 0)
+        end
+        S.EditBox(set.KeepInput)
     end
-    S.EditBox(pane.KeepInput)
     S.Button(pane.RemoveRuleButton)
+    S.Button(pane.AddOverrideButton)
+    S.Button(pane.RemoveOverrideButton)
 end)
