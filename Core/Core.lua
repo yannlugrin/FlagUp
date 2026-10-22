@@ -12,6 +12,8 @@ local addonName, ns = ...
 ---@field RulesWindow FlagUp.RulesWindow
 ---@field AddItemDialog FlagUp.AddItemDialog
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog
+---@field SettingsPanel FlagUp.SettingsPanel
+---@field Launcher FlagUp.Launcher
 
 ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
@@ -19,10 +21,13 @@ ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
+frame:RegisterEvent("PLAYER_LOGIN")
 
 frame:SetScript("OnEvent", function(_, event, ...)
     local arg1 = ...
     if event == "ADDON_LOADED" and arg1 == addonName then
         ns.Store.Init()
+    elseif event == "PLAYER_LOGIN" then
+        ns.Launcher.Register()
     end
 end)

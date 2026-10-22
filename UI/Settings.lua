@@ -3,6 +3,11 @@ local addonName, ns = ...
 
 local L = ns.L
 
+---The settings' page in the game's Options › AddOns.
+---@class FlagUp.SettingsPanel
+local SettingsPanel = {}
+ns.SettingsPanel = SettingsPanel
+
 local category, layout = Settings.RegisterVerticalLayoutCategory(C_AddOns.GetAddOnMetadata(addonName, "Title"))
 
 local function addSectionHeader(name)
@@ -15,14 +20,14 @@ addSectionHeader(L["General"])
 Settings.CreateCheckbox(category, Settings.RegisterProxySetting(category, "FlagUp_MinimapButton",
     Settings.VarType.Boolean, L["Show minimap button"], not ns.Store.DEFAULTS.profile.launcher.hide,
     function() return not ns.settings.launcher.hide end,
-    function(value) ns.settings.launcher.hide = not value end),
-    L["A button on the edge of the minimap: click to open the rules window, right-click for a menu."])
+    function(value) ns.Launcher.SetMinimapButtonShown(value) end),
+    L["A button on the edge of the minimap: click to show or hide the rules window, right-click for a menu."])
 Settings.CreateCheckbox(category, Settings.RegisterProxySetting(category, "FlagUp_Compartment",
     Settings.VarType.Boolean, L["Show in the add-on compartment"],
     ns.Store.DEFAULTS.profile.launcher.showInCompartment,
     function() return ns.settings.launcher.showInCompartment == true end,
-    function(value) ns.settings.launcher.showInCompartment = value end),
-    L["Flag Up in the add-on compartment next to the minimap: click to open the rules window."])
+    function(value) ns.Launcher.SetCompartmentShown(value) end),
+    L["Flag Up in the add-on compartment next to the minimap: click to open these settings."])
 
 -- Mailbox ----------------------------------------------------------------------------------------
 
@@ -41,3 +46,8 @@ Settings.CreateDropdown(category, Settings.RegisterProxySetting(category, "FlagU
     L["With automatic sending on, hold this key when opening the mailbox to skip sending. With it off, hold it to send."])
 
 Settings.RegisterAddOnCategory(category)
+
+---Opens the game's options on this page.
+function SettingsPanel.Open()
+    Settings.OpenToCategory(category:GetID())
+end

@@ -16,5 +16,5 @@ read_globals = {
     "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "ScrollBoxConstants",
     "NORMAL_FONT_COLOR", "HIGHLIGHT_FONT_COLOR", "GRAY_FONT_COLOR", "Enum", "ColorManager",
     "GameFontNormal", "ButtonFrameTemplate_HidePortrait", "FILTER", "CANCEL",
-    "Settings", "CreateSettingsListSectionHeaderInitializer",
+    "Settings", "CreateSettingsListSectionHeaderInitializer", "MenuUtil",
 }

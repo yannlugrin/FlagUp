@@ -78,7 +78,7 @@ The game's own settings list, laid out like its options (label left, control rig
 
 ### 6. Minimap Button and Add-on Compartment
 
-The usual add-on minimap button, the one most add-ons show (LibDBIcon). Left-click on the button, or the compartment entry: open the rules window. Right-click on the button: a menu with **Open** (the rules window) and **Settings** (frame 5).
+The usual add-on minimap button, the one most add-ons show (LibDBIcon). Left-click on the button: show or hide the rules window. Right-click on the button: a menu with **Open** (the rules window) and **Settings** (frame 5). A click on the compartment entry opens the settings (frame 5), as other add-ons' entries do.
 
 ### 7. Mailbox Side Panel — Preview
 

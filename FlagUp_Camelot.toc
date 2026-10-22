@@ -25,3 +25,4 @@ UI\RulesWindow.lua
 UI\AddItemDialog.lua
 UI\AddCategoryDialog.lua
 UI\Settings.lua
+UI\Launcher.lua

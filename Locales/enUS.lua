@@ -1,7 +1,7 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("FlagUp", "enUS", true)
 if not L then return end
 
-L["A button on the edge of the minimap: click to open the rules window, right-click for a menu."] = true
+L["A button on the edge of the minimap: click to show or hide the rules window, right-click for a menu."] = true
 L["Add"] = true
 L["Add %s"] = true
 L["Add category"] = true
@@ -9,20 +9,25 @@ L["Add item"] = true
 L["already added"] = true
 L["Category or item"] = true
 L["Character overrides"] = true
+L["Click: open the settings"] = true
+L["Click: show or hide the rules window"] = true
 L["Drop an item anywhere on this window to add it under its category."] = true
-L["Flag Up in the add-on compartment next to the minimap: click to open the rules window."] = true
+L["Flag Up in the add-on compartment next to the minimap: click to open these settings."] = true
 L["General"] = true
 L["Item ID or link"] = true
 L["Keep"] = true
 L["Mailbox"] = true
+L["Open"] = true
 L["Qualities"] = true
 L["Remove %s's override"] = true
 L["Remove rule"] = true
+L["Right-click: menu"] = true
 L["Rule"] = true
 L["Select a line in the tree."] = true
 L["Send automatically"] = true
 L["Send key"] = true
 L["Sends as soon as the mailbox opens, without the preview."] = true
+L["Settings"] = true
 L["Show in the add-on compartment"] = true
 L["Show minimap button"] = true
 L["Type an item ID, or shift-click an item to paste its link. You can also drop an item on the rules window."] = true
