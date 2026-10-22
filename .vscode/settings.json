@@ -23,7 +23,9 @@
         "ScrollBoxConstants",
         "ColorManager",
         "SlashCmdList",
-        "ButtonFrameTemplate_HidePortrait"
+        "ButtonFrameTemplate_HidePortrait",
+        "FILTER",
+        "CANCEL"
     ],
     "Lua.type.weakUnionCheck": true
 }

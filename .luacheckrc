@@ -15,5 +15,5 @@ read_globals = {
     "LibStub", "CreateFrame", "UIParent", "C_AddOns", "EllesmereUI",
     "CreateScrollBoxListLinearView", "ScrollUtil", "CreateDataProvider", "ScrollBoxConstants",
     "NORMAL_FONT_COLOR", "HIGHLIGHT_FONT_COLOR", "GRAY_FONT_COLOR", "Enum", "ColorManager",
-    "GameFontNormal", "ButtonFrameTemplate_HidePortrait",
+    "GameFontNormal", "ButtonFrameTemplate_HidePortrait", "FILTER", "CANCEL",
 }

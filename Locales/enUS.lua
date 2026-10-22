@@ -2,8 +2,10 @@ local L = LibStub("AceLocale-3.0"):NewLocale("FlagUp", "enUS", true)
 if not L then return end
 
 L["Add"] = true
+L["Add %s"] = true
 L["Add category"] = true
 L["Add item"] = true
+L["already added"] = true
 L["Category or item"] = true
 L["Character overrides"] = true
 L["Drop an item anywhere on this window to add it under its category."] = true

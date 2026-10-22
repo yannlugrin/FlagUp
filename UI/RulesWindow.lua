@@ -8,18 +8,6 @@ local L = ns.L
 local RulesWindow = {}
 ns.RulesWindow = RulesWindow
 
----A line of the tree, ready to show.
----@class FlagUp.TreeLine
----@field kind "category"|"subcategory"|"item"
----@field name string
----@field rule string? the rule the character being played uses, as shown in the Rule column; nil on a plain heading
----@field inherited boolean? the line inherits all its fields: its rule is greyed out
----@field overridden boolean? the character being played overrides the line: a glyph follows its name
----@field collapsed boolean? on a category or subcategory
----@field icon number|string? on an item
----@field color ColorMixin? the quality colour, on an item
----@field selected boolean?
-
 local WIDTH, HEIGHT = 1040, 640
 local TOOLBAR_LEFT = 64
 local TOOLBAR_TOP = -30
@@ -33,15 +21,7 @@ local SCROLL_BAR_SPACE = 20
 -- The Rule column takes the width left of the name's, up to 28 from the right, over the scroll bar.
 local NAME_WIDTH = 340
 -- A cell starts where its column header's text does: 8 into the header.
-local NAME_LEFT, RULE_LEFT = 10, NAME_WIDTH + 8
--- The rule leaves room for a category's +/- mark on the right.
-local RULE_RIGHT = -28
-local OVERRIDE_GLYPH_TEXTURE = "Interface\\AddOns\\" .. addonName .. "\\Media\\Glyphs\\Person"
-local OVERRIDE_GLYPH_SIZE = 12
-local CATEGORY_HEIGHT, LINE_HEIGHT = 28, 22
-local SUBCATEGORY_INDENT, ITEM_INDENT = 14, 34
-local ICON_SIZE = 18
-local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar"
+local RULE_LEFT = NAME_WIDTH + 8
 
 local PANE_GAP = 16
 local PANE_PADDING = 12
@@ -138,128 +118,9 @@ tree.Hint:SetPoint("BOTTOMRIGHT", -8, 8)
 tree.Hint:SetJustifyH("LEFT")
 tree.Hint:SetText(L["Drop an item anywhere on this window to add it under its category."])
 
----A tree row; createRow adds its regions the first time the row is used.
----@class FlagUp.TreeRow: Button
----@field CategoryBackground Texture
----@field CategoryHighlight Texture
----@field LineHighlight Texture
----@field Selected Texture
----@field StateIcon Texture
----@field ToggleIcon Texture
----@field Icon Texture
----@field Name FontString
----@field OverrideGlyph Texture
----@field Rule FontString
-
----@param row FlagUp.TreeRow
-local function createRow(row)
-    -- A category is a header bar, as the game's reputation list draws its headers.
-    row.CategoryBackground = row:CreateTexture(nil, "BACKGROUND")
-    row.CategoryBackground:SetAtlas("common-button-list-collapseExpand")
-    row.CategoryBackground:SetAllPoints()
-
-    row.CategoryHighlight = row:CreateTexture(nil, "HIGHLIGHT")
-    row.CategoryHighlight:SetAtlas("common-button-list-collapseExpand")
-    row.CategoryHighlight:SetBlendMode("ADD")
-    row.CategoryHighlight:SetAlpha(0.3)
-    row.CategoryHighlight:SetAllPoints()
-
-    row.LineHighlight = row:CreateTexture(nil, "HIGHLIGHT")
-    row.LineHighlight:SetTexture(LINE_HIGHLIGHT_TEXTURE)
-    row.LineHighlight:SetBlendMode("ADD")
-    row.LineHighlight:SetAllPoints()
-
-    row.Selected = row:CreateTexture(nil, "BACKGROUND", nil, 1)
-    row.Selected:SetTexture(LINE_HIGHLIGHT_TEXTURE)
-    row.Selected:SetBlendMode("ADD")
-    row.Selected:SetAllPoints()
-
-    row.StateIcon = row:CreateTexture(nil, "BORDER")
-    row.StateIcon:SetPoint("RIGHT", -8, -1)
-
-    -- A subcategory's open or closed mark, as the game's reputation list draws its subheaders.
-    row.ToggleIcon = row:CreateTexture(nil, "ARTWORK")
-    row.ToggleIcon:SetPoint("LEFT", SUBCATEGORY_INDENT, 0)
-
-    row.Icon = row:CreateTexture(nil, "ARTWORK")
-    row.Icon:SetSize(ICON_SIZE, ICON_SIZE)
-    row.Icon:SetPoint("LEFT", ITEM_INDENT, 0)
-
-    row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLeft")
-    row.Name:SetWordWrap(false)
-
-    row.OverrideGlyph = row:CreateTexture(nil, "ARTWORK")
-    row.OverrideGlyph:SetTexture(OVERRIDE_GLYPH_TEXTURE)
-    row.OverrideGlyph:SetVertexColor(NORMAL_FONT_COLOR:GetRGB())
-    row.OverrideGlyph:SetSize(OVERRIDE_GLYPH_SIZE, OVERRIDE_GLYPH_SIZE)
-    row.OverrideGlyph:SetPoint("LEFT", row.Name, "RIGHT", 4, 0)
-
-    row.Rule = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLeft")
-    row.Rule:SetPoint("LEFT", RULE_LEFT, 0)
-    row.Rule:SetPoint("RIGHT", RULE_RIGHT, 0)
-    row.Rule:SetWordWrap(false)
-end
-
----@param row FlagUp.TreeRow
----@param line FlagUp.TreeLine
-local function initRow(row, line)
-    if not row.Name then createRow(row) end
-
-    local isCategory = line.kind == "category"
-    row.CategoryBackground:SetShown(isCategory)
-    row.CategoryHighlight:SetShown(isCategory)
-    row.LineHighlight:SetShown(not isCategory)
-    row.Selected:SetShown(line.selected == true)
-
-    row.StateIcon:SetShown(isCategory)
-    if isCategory then
-        row.StateIcon:SetAtlas(line.collapsed and "common-button-list-plus" or "common-button-list-minus", true)
-    end
-    row.ToggleIcon:SetShown(line.kind == "subcategory")
-    if line.kind == "subcategory" then
-        row.ToggleIcon:SetAtlas(line.collapsed and "campaign_headericon_closed" or "campaign_headericon_open", true)
-    end
-    row.Icon:SetShown(line.kind == "item")
-    if line.kind == "item" then row.Icon:SetTexture(line.icon) end
-
-    -- The name follows its mark: none on a category, the open or closed mark, the item's icon.
-    local nameLeft = NAME_LEFT
-    if line.kind == "subcategory" then
-        nameLeft = SUBCATEGORY_INDENT + row.ToggleIcon:GetWidth() + 4
-    elseif line.kind == "item" then
-        nameLeft = ITEM_INDENT + ICON_SIZE + 6
-    end
-    row.Name:SetPoint("LEFT", nameLeft, 0)
-    row.Name:SetText(line.name)
-    if line.color then
-        row.Name:SetTextColor(line.color:GetRGB())
-    else
-        row.Name:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
-    end
-
-    -- The name is as wide as its text, so the glyph follows it, within the name column.
-    local glyphSpace = line.overridden and OVERRIDE_GLYPH_SIZE + 4 or 0
-    local nameSpace = RULE_LEFT - 8 - nameLeft - glyphSpace
-    row.Name:SetWidth(math.min(row.Name:GetUnboundedStringWidth(), nameSpace))
-    row.OverrideGlyph:SetShown(line.overridden == true)
-
-    row.Rule:SetText(line.rule or "")
-    if line.inherited then
-        row.Rule:SetTextColor(GRAY_FONT_COLOR:GetRGB())
-    else
-        row.Rule:SetTextColor(HIGHLIGHT_FONT_COLOR:GetRGB())
-    end
-end
-
----@param line FlagUp.TreeLine
----@return number
-local function rowHeight(_, line)
-    return line.kind == "category" and CATEGORY_HEIGHT or LINE_HEIGHT
-end
-
 local treeView = CreateScrollBoxListLinearView()
-treeView:SetElementInitializer("Button", initRow)
-treeView:SetElementExtentCalculator(rowHeight)
+treeView:SetElementInitializer("Button", function(row, line) ns.TreeRow.Init(row, line, RULE_LEFT) end)
+treeView:SetElementExtentCalculator(ns.TreeRow.Height)
 ScrollUtil.InitScrollBoxListWithScrollBar(tree.ScrollBox, tree.ScrollBar, treeView)
 
 ---Shows these lines in the tree, in this order.
