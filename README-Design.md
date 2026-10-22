@@ -22,15 +22,14 @@ Mail never goes to the character being played. Bound items are never sent.
 The rules are shared by the player's characters of one ruleset and faction; each ruleset and faction has its own. They form a tree that follows the game's item categories:
 
 - **Category** (Trade Goods), **subcategory** (Herb), **specific item** (Peacebloom) under its subcategory.
-- **By quality**: a separate branch of rules on a quality, whatever the category (Uncommon to the enchanter).
 
-Each rule holds:
+Each line holds these fields:
 
-- **Rule**: one dropdown listing the recipients and *Don't send*. Choosing a recipient sends to it; choosing *Don't send* removes the recipient. A new line starts as *Don't send*.
-- **Qualities** (on a category or subcategory): the qualities it applies to, a multi-select (Poor, Common, Uncommon, Rare, Epic, Legendary), all checked by default.
+- **Rule**: one dropdown listing the recipients and *Don't send*. Choosing a recipient sends to it; choosing *Don't send* removes the recipient.
+- **Qualities** (on the equipment categories, Armor and Weapon, and their subcategories): the qualities it applies to, a multi-select (Poor, Common, Uncommon, Rare, Epic, Legendary). None selected means no filter: every quality.
 - **Keep in bags** (on a specific item): how many stay in the bags; only the rest is sent.
 
-**Which rule applies.** A line without a rule takes nothing of its own: the broader rule decides. For an item, the most specific rule wins: the specific item, then its subcategory, then its category, then a quality rule.
+**Inherited fields.** Each field has a checkbox. Checked, the line sets the field; unchecked, the field is greyed out and shows the value it inherits from the line above: an item from its subcategory, a subcategory from its category. Above the categories, hidden, are the defaults: *Don't send*, no quality selected, nothing kept. So for an item, each field comes from the closest line that sets it, else from the defaults. A new line starts with every field inherited.
 
 ### Character overrides
 
@@ -49,15 +48,15 @@ A character can override a shared rule for itself, field by field: the rule (ano
 A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
-- **Tree** (left): only the lines that have a rule, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in the pane's overrides section (frame 2). The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
-- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), its **Rule** (one dropdown: the recipients and *Don't send*), its **Qualities** on a category, its **Keep in bags** on an item, and **Remove rule** (frame 9 when an override sends).
+- **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. An inherited rule shows greyed out in *Rule*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in the pane's overrides section (frame 2). The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
+- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep in bags** on an item. Then **Remove rule** (frame 9). Unchecking the last checked field also opens frame 9.
 
 ### 2. Rules Window — Character Overrides Section
 
 The bottom section of the right pane, under the shared rule, titled **Character overrides**.
 
 - **Overridden by**: the characters that override the selected rule, as tags; the selected tag's override shows below. A **+** tag opens a small list under it: a field to type a name, then the known characters without an override on this rule.
-- For each field (Rule, Keep in bags, Qualities): a checkbox to override it, the character's value, and the shared value beside it.
+- For each field the line has (Rule, Qualities, Keep in bags): a checkbox to override it, the character's value, and the shared value beside it (set on the line or inherited).
 - **Remove <character>'s override**.
 
 ### 3. Add Item (Dialog)
@@ -68,7 +67,7 @@ Dropping an item on the rules window does the same without the dialog.
 
 ### 4. Add Category (Dialog)
 
-The game's categories as a tree, with a filter. A category that already has a rule is grey, marked *has a rule*. **Add <category>** adds it to the tree; **Cancel**.
+The game's categories as a tree, with a filter. A category already in the tree is grey, marked *already added*. **Add <category>** adds it to the tree; **Cancel**.
 
 ### 5. Settings (in the Game's Options → AddOns Tab)
 
@@ -98,12 +97,11 @@ With automatic sending on (or the send key held while it is off), the panel open
 
 ### 9. Remove Rule (Dialog)
 
-**Remove rule** on a line that a character overrides to send to a recipient. Without such an override, the line and its overrides are removed at once, without the dialog.
+Opens on **Remove rule**, always, and when the last checked field of the line is unchecked. Its buttons depend on the line:
 
-- The text names the characters whose override sends.
-- **Keep as Don't send**: the shared rule becomes *Don't send*, which preserves the overrides that send; the overrides set to *Don't send* are removed. The shared Qualities and Keep in bags stay as they are: the overrides that still send use them.
-- **Remove everything**: the line and all its overrides.
-- **Cancel**: nothing changes.
+- **Remove**: the line and its overrides. The lines under it stay and inherit from the line above it.
+- **Inherit**, only when characters override the line (the text names them): every field of the line is unchecked and inherited; the line stays with its overrides as they are.
+- **Cancel**: nothing changes; an unchecked field is checked again.
 
 ## Commands
 
