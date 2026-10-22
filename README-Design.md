@@ -27,7 +27,7 @@ Each line holds these fields:
 
 - **Rule**: one dropdown listing the recipients and *Don't send*. Choosing a recipient sends to it; choosing *Don't send* removes the recipient.
 - **Qualities** (on the equipment categories, Armor and Weapon, and their subcategories): the qualities it applies to, a multi-select (Poor, Common, Uncommon, Rare, Epic, Legendary). None selected means no filter: every quality.
-- **Keep in bags** (on a specific item): how many stay in the bags; only the rest is sent.
+- **Keep** (on a specific item): how many stay in the bags; only the rest is sent.
 
 **Inherited fields.** Each field has a checkbox. Checked, the line sets the field; unchecked, the field is greyed out and shows the value it inherits from the line above: an item from its subcategory, a subcategory from its category. Above the categories, hidden, are the defaults: *Don't send*, no quality selected, nothing kept. So for an item, each field comes from the closest line that sets it, else from the defaults. A new line starts with every field inherited.
 
@@ -48,15 +48,15 @@ A character can override a shared rule for itself, field by field: the rule (ano
 A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
-- **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*, *Overrides*. An inherited rule shows greyed out in *Rule*. Categories collapse with the game's +/− buttons. A line overridden by at least one character shows a mark in *Overrides*; who overrode it is in the pane's overrides section (frame 2). The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
-- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep in bags** on an item. Then **Remove rule** (frame 9). Unchecking the last checked field also opens frame 9.
+- **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*. *Rule* shows what the character being played will do with the line: the recipient's name or *Don't send*, and ", keep 20" when some are kept; it is greyed out when the line inherits all its fields. When that character overrides the line, *Rule* shows its override and a small glyph follows the line's name; who else overrides it is in the pane's overrides section (frame 2). Categories collapse with the game's +/− buttons. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
+- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep** on an item. Then **Remove rule** (frame 9). Unchecking the last checked field also opens frame 9.
 
 ### 2. Rules Window — Character Overrides Section
 
 The bottom section of the right pane, under the shared rule, titled **Character overrides**.
 
 - **Overridden by**: the characters that override the selected rule, as tags; the selected tag's override shows below. A **+** tag opens a small list under it: a field to type a name, then the known characters without an override on this rule.
-- For each field the line has (Rule, Qualities, Keep in bags): a checkbox to override it, the character's value, and the shared value beside it (set on the line or inherited).
+- For each field the line has (Rule, Qualities, Keep): a checkbox to override it, the character's value, and the shared value beside it (set on the line or inherited).
 - **Remove <character>'s override**.
 
 ### 3. Add Item (Dialog)

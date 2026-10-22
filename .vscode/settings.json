@@ -20,7 +20,9 @@
         "ScrollUtil",
         "CreateScrollBoxListLinearView",
         "CreateDataProvider",
-        "ScrollBoxConstants"
+        "ScrollBoxConstants",
+        "ColorManager",
+        "SlashCmdList"
     ],
     "Lua.type.weakUnionCheck": true
 }

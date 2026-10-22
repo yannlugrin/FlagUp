@@ -26,6 +26,7 @@ StashPost/
 │   ├── enUS.lua                   English texts (AceLocale default)
 │   └── frFR.lua                   French texts
 ├── Media/
+│   ├── Glyphs/Person.tga          The tree's override glyph: white 32×32 (Who's Who's), tinted in code
 │   ├── Icon.tga                   Add-on icon, 128×128: the TOC's IconTexture and the rules window's portrait
 │   └── Source/stashpost.png       The icon's 1024×1024 source
 ├── UI/
@@ -79,5 +80,5 @@ StashPostDB = {
 - **`sendTo`**: the recipient's name, or `false` for *Don't send*.
 - **`qualities`** (Armor and Weapon categories and subcategories): the selected qualities; an empty table means none selected, no filter.
 - **`keep`** (items): how many stay in the bags; `nil` takes the default, nothing kept.
-- **`overrides`** (any line): by the overriding character's name, only the fields that character overrides (`sendTo`, `keep`, `qualities`, as on the line). A line with an `overrides` entry shows *Customized* in the tree.
+- **`overrides`** (any line): by the overriding character's name, only the fields that character overrides (`sendTo`, `keep`, `qualities`, as on the line). The tree marks a line with a glyph when the character being played has an entry in its `overrides`.
 - **Not saved**: an item's name, quality, icon and category, read from the game by item ID; category names, read by class and subclass ID; the mailbox checkboxes, which last one run.
