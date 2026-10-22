@@ -29,6 +29,21 @@ ns.MailPanel = MailPanel
 ---@field mails integer
 ---@field postage integer in copper
 
+---An attachment of a mail, ready to show.
+---@class FlagUp.MailAttachment
+---@field itemID integer for its tooltip
+---@field icon number|string
+---@field count integer
+
+---A mail being sent, ready to show.
+---@class FlagUp.SendingMail
+---@field recipient string
+---@field part integer? with several mails to the recipient: which one this is
+---@field parts integer? with several mails to the recipient: how many
+---@field status "sent"|"sending"|"waiting"|"failed"
+---@field attachments FlagUp.MailAttachment[]
+---@field error string? on a failed mail: the game's error
+
 local WIDTH = 320
 -- The panel's border touches the mailbox's.
 local MAILBOX_GAP = 2
@@ -41,8 +56,15 @@ local MAILS_LEFT = 150
 local ITEM_HEIGHT = 24
 local CHECKBOX_SIZE = 26
 local ICON_SIZE = 18
-local UNCHECKED_ALPHA = 0.5
 local SKINNED_CHECKBOX_SIZE = 16
+local MAIL_TITLE_HEIGHT = 18
+local SPINNER_SIZE = 16
+local ATTACHMENT_SIZE, ATTACHMENT_GAP = 26, 2
+-- As many as the row's width holds; a mail's twelve take two rows.
+local ATTACHMENTS_PER_ROW = 9
+local MAIL_ERROR_HEIGHT = 14
+local MAIL_BOTTOM_PADDING = 8
+local DIMMED_ALPHA = 0.5
 
 -- Panel ------------------------------------------------------------------------------------------
 
@@ -55,24 +77,30 @@ MailPanel.Panel = panel
 
 panel.Inset:Hide()
 
--- Items ------------------------------------------------------------------------------------------
+---A list of the panel, in an inset with its scroll bar: the preview's items, or the mails being sent.
+local function createList()
+    local list = CreateFrame("Frame", nil, panel)
+    list:SetPoint("TOPLEFT", PADDING, LIST_TOP)
+    list:SetPoint("BOTTOMRIGHT", -PADDING, LIST_BOTTOM)
 
-local list = CreateFrame("Frame", nil, panel)
-list:SetPoint("TOPLEFT", PADDING, LIST_TOP)
-list:SetPoint("BOTTOMRIGHT", -PADDING, LIST_BOTTOM)
+    list.Inset = CreateFrame("Frame", nil, list, "InsetFrameTemplate")
+    list.Inset:SetPoint("TOPLEFT", -3, 3)
+    list.Inset:SetPoint("BOTTOMRIGHT", 3, -3)
+
+    list.ScrollBox = CreateFrame("Frame", nil, list, "WowScrollBoxList")
+    list.ScrollBox:SetPoint("TOPLEFT")
+    list.ScrollBox:SetPoint("BOTTOMRIGHT", -SCROLL_BAR_SPACE, 0)
+
+    list.ScrollBar = CreateFrame("EventFrame", nil, list, "MinimalScrollBar")
+    list.ScrollBar:SetPoint("TOPLEFT", list.ScrollBox, "TOPRIGHT", 6, 0)
+    list.ScrollBar:SetPoint("BOTTOMLEFT", list.ScrollBox, "BOTTOMRIGHT", 6, 0)
+    return list
+end
+
+-- Preview ----------------------------------------------------------------------------------------
+
+local list = createList()
 panel.List = list
-
-list.Inset = CreateFrame("Frame", nil, list, "InsetFrameTemplate")
-list.Inset:SetPoint("TOPLEFT", -3, 3)
-list.Inset:SetPoint("BOTTOMRIGHT", 3, -3)
-
-list.ScrollBox = CreateFrame("Frame", nil, list, "WowScrollBoxList")
-list.ScrollBox:SetPoint("TOPLEFT")
-list.ScrollBox:SetPoint("BOTTOMRIGHT", -SCROLL_BAR_SPACE, 0)
-
-list.ScrollBar = CreateFrame("EventFrame", nil, list, "MinimalScrollBar")
-list.ScrollBar:SetPoint("TOPLEFT", list.ScrollBox, "TOPRIGHT", 6, 0)
-list.ScrollBar:SetPoint("BOTTOMLEFT", list.ScrollBox, "BOTTOMRIGHT", 6, 0)
 
 list.Empty = list:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 list.Empty:SetPoint("LEFT", 12, 0)
@@ -120,9 +148,9 @@ local function initItemRow(row, item)
     row.Icon:SetDesaturated(not item.checked)
     row.Name:SetText(item.name)
     row.Name:SetTextColor(item.color:GetRGB())
-    row.Count:SetText(item.count)
+    row.Count:SetText(tostring(item.count))
     -- An unchecked item stays in the bags: its row is dimmed.
-    local alpha = item.checked and 1 or UNCHECKED_ALPHA
+    local alpha = item.checked and 1 or DIMMED_ALPHA
     row.Icon:SetAlpha(alpha)
     row.Name:SetAlpha(alpha)
     row.Count:SetAlpha(alpha)
@@ -144,12 +172,139 @@ listView:SetElementExtentCalculator(function(index, element)
 end)
 ScrollUtil.InitScrollBoxListWithScrollBar(list.ScrollBox, list.ScrollBar, listView)
 
+-- Sending ----------------------------------------------------------------------------------------
+
+local sendingList = createList()
+sendingList:Hide()
+panel.SendingList = sendingList
+
+---An attachment's slot in a mail's row: its icon and count, its tooltip on hover.
+---@class FlagUp.AttachmentSlot: Button
+---@field Icon Texture
+---@field Count FontString
+---@field itemID integer?
+
+---A mail's row; createMailRow adds its regions the first time the row is used.
+---@class FlagUp.MailRow: Frame
+---@field Title FontString
+---@field Status FontString
+---@field Spinner Frame turns while the mail is being sent
+---@field Slots FlagUp.AttachmentSlot[]
+---@field Error FontString
+
+local STATUS_TEXTS = { sent = L["Sent"], sending = L["Sending…"], waiting = L["Waiting"], failed = L["Failed"] }
+local STATUS_COLORS = { sent = GREEN_FONT_COLOR, sending = HIGHLIGHT_FONT_COLOR, waiting = GRAY_FONT_COLOR,
+    failed = RED_FONT_COLOR }
+
+---@param slot FlagUp.AttachmentSlot
+local function showAttachmentTooltip(slot)
+    GameTooltip:SetOwner(slot, "ANCHOR_RIGHT")
+    GameTooltip:SetItemByID(slot.itemID)
+    GameTooltip:Show()
+end
+
+---@param row FlagUp.MailRow
+local function createMailRow(row)
+    row.Status = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.Status:SetPoint("TOPRIGHT", -8, -4)
+
+    -- The game's loading ring, as the auction house shows it; it turns while shown.
+    row.Spinner = CreateFrame("Frame", nil, row, "SpinnerTemplate")
+    row.Spinner:SetSize(SPINNER_SIZE, SPINNER_SIZE)
+    row.Spinner:SetPoint("RIGHT", row.Status, "LEFT", -4, 0)
+
+    row.Title = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLeft")
+    row.Title:SetPoint("TOPLEFT", 8, -4)
+    row.Title:SetPoint("RIGHT", row.Status, "LEFT", -8 - SPINNER_SIZE, 0)
+    row.Title:SetWordWrap(false)
+
+    -- One slot per attachment a mail can hold, in a row.
+    row.Slots = {}
+    for index = 1, ATTACHMENTS_MAX_SEND do
+        local slot = CreateFrame("Button", nil, row) --[[@as FlagUp.AttachmentSlot]]
+        slot:SetSize(ATTACHMENT_SIZE, ATTACHMENT_SIZE)
+        local column = (index - 1) % ATTACHMENTS_PER_ROW
+        local line = math.floor((index - 1) / ATTACHMENTS_PER_ROW)
+        slot:SetPoint("TOPLEFT", 8 + column * (ATTACHMENT_SIZE + ATTACHMENT_GAP),
+            -MAIL_TITLE_HEIGHT - 4 - line * (ATTACHMENT_SIZE + ATTACHMENT_GAP))
+        slot.Icon = slot:CreateTexture(nil, "ARTWORK")
+        slot.Icon:SetAllPoints()
+        slot.Count = slot:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+        slot.Count:SetPoint("BOTTOMRIGHT", 1, 0)
+        slot:SetScript("OnEnter", showAttachmentTooltip)
+        slot:SetScript("OnLeave", GameTooltip_Hide)
+        row.Slots[index] = slot
+    end
+
+    row.Error = row:CreateFontString(nil, "OVERLAY", "GameFontRedSmall")
+    row.Error:SetPoint("RIGHT", -8, 0)
+    row.Error:SetJustifyH("LEFT")
+    row.Error:SetWordWrap(false)
+end
+
+---The height of a mail's attachments, on as many rows as they take.
+---@param mail FlagUp.SendingMail
+---@return number
+local function attachmentsHeight(mail)
+    local rows = math.max(1, math.ceil(#mail.attachments / ATTACHMENTS_PER_ROW))
+    return rows * ATTACHMENT_SIZE + (rows - 1) * ATTACHMENT_GAP
+end
+
+---@param row FlagUp.MailRow
+---@param mail FlagUp.SendingMail
+local function initMailRow(row, mail)
+    if not row.Title then createMailRow(row) end
+
+    if mail.parts then
+        row.Title:SetText(L["%s · %d of %d"]:format(mail.recipient, mail.part, mail.parts))
+    else
+        row.Title:SetText(mail.recipient)
+    end
+    row.Status:SetText(STATUS_TEXTS[mail.status])
+    row.Status:SetTextColor(STATUS_COLORS[mail.status]:GetRGB())
+    row.Spinner:SetShown(mail.status == "sending")
+
+    for index, slot in ipairs(row.Slots) do
+        local attachment = mail.attachments[index]
+        slot:SetShown(attachment ~= nil)
+        if attachment then
+            slot.itemID = attachment.itemID
+            slot.Icon:SetTexture(attachment.icon)
+            slot.Count:SetText(attachment.count > 1 and tostring(attachment.count) or "")
+        end
+    end
+
+    -- The error sits under the attachments' last row.
+    row.Error:SetPoint("TOPLEFT", 8, -MAIL_TITLE_HEIGHT - 4 - attachmentsHeight(mail) - 4)
+    row.Error:SetShown(mail.error ~= nil)
+    row.Error:SetText(mail.error or "")
+
+    -- A mail still waiting is dimmed; its status stays grey.
+    local alpha = mail.status == "waiting" and DIMMED_ALPHA or 1
+    row.Title:SetAlpha(alpha)
+    for _, slot in ipairs(row.Slots) do slot:SetAlpha(alpha) end
+end
+
+local sendingView = CreateScrollBoxListLinearView()
+sendingView:SetElementInitializer("Frame", initMailRow)
+sendingView:SetElementExtentCalculator(function(_, mail)
+    local height = MAIL_TITLE_HEIGHT + 4 + attachmentsHeight(mail) + MAIL_BOTTOM_PADDING
+    return mail.error and height + MAIL_ERROR_HEIGHT or height
+end)
+ScrollUtil.InitScrollBoxListWithScrollBar(sendingList.ScrollBox, sendingList.ScrollBar, sendingView)
+
 -- Footer -----------------------------------------------------------------------------------------
 
 panel.SendButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 panel.SendButton:SetText(L["Send"])
 panel.SendButton:SetSize(math.max(BUTTON_WIDTH, panel.SendButton:GetTextWidth() + 24), BUTTON_HEIGHT)
 panel.SendButton:SetPoint("BOTTOMRIGHT", -PADDING, PADDING)
+
+panel.StopButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+panel.StopButton:SetText(L["Stop"])
+panel.StopButton:SetSize(math.max(BUTTON_WIDTH, panel.StopButton:GetTextWidth() + 24), BUTTON_HEIGHT)
+panel.StopButton:SetPoint("BOTTOMRIGHT", -PADDING, PADDING)
+panel.StopButton:Hide()
 
 panel.Summary = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 panel.Summary:SetPoint("LEFT", panel, "BOTTOMLEFT", PADDING, PADDING + BUTTON_HEIGHT / 2)
@@ -165,6 +320,11 @@ end
 ---Shows what the mailbox would send.
 ---@param preview FlagUp.MailPreview
 function panel:ShowPreview(preview)
+    list:Show()
+    sendingList:Hide()
+    panel.SendButton:Show()
+    panel.StopButton:Hide()
+
     local elements = {}
     for _, group in ipairs(preview.groups) do
         elements[#elements + 1] = { header = { kind = "category", name = group.recipient, mails = mailCount(group.mails) } }
@@ -177,6 +337,33 @@ function panel:ShowPreview(preview)
 
     panel.Summary:SetText(L["%s · postage %s"]:format(mailCount(preview.mails), GetMoneyString(preview.postage)))
     panel.SendButton:SetEnabled(#elements > 0)
+end
+
+---Shows the mails being sent, in sending order.
+---@param mails FlagUp.SendingMail[]
+function panel:ShowSending(mails)
+    list:Hide()
+    sendingList:Show()
+    panel.SendButton:Hide()
+    panel.StopButton:Show()
+
+    sendingList.ScrollBox:SetDataProvider(CreateDataProvider(mails), ScrollBoxConstants.RetainScrollPosition)
+
+    local sent, failed = 0, 0
+    for _, mail in ipairs(mails) do
+        if mail.status == "sent" then
+            sent = sent + 1
+        elseif mail.status == "failed" then
+            failed = failed + 1
+        end
+    end
+    if failed > 0 then
+        panel.Summary:SetText(L["%d of %d sent, %d failed"]:format(sent, #mails, failed))
+    else
+        panel.Summary:SetText(L["%d of %d sent"]:format(sent, #mails))
+    end
+    -- Once every mail is sent or failed, there is nothing left to stop.
+    panel.StopButton:SetEnabled(sent + failed < #mails)
 end
 
 ---Shows the panel beside the open mailbox. Call on MAIL_SHOW.
@@ -195,7 +382,10 @@ end
 ns.Skin.Apply(function(S)
     S.Shell(panel)
     S.CloseButton(panel.CloseButton)
-    S.Inset(list.Inset)
-    S.ScrollBar(list.ScrollBar)
+    for _, eachList in ipairs({ list, sendingList }) do
+        S.Inset(eachList.Inset)
+        S.ScrollBar(eachList.ScrollBar)
+    end
     S.Button(panel.SendButton)
+    S.Button(panel.StopButton)
 end)
