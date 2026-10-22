@@ -1,6 +1,9 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("FlagUp", "enUS", true)
 if not L then return end
 
+L["%d mails"] = true
+L["%s · postage %s"] = true
+L["1 mail"] = true
 L["A button on the edge of the minimap: click to show or hide the rules window, right-click for a menu."] = true
 L["Add"] = true
 L["Add %s"] = true
@@ -17,6 +20,7 @@ L["General"] = true
 L["Item ID or link"] = true
 L["Keep"] = true
 L["Mailbox"] = true
+L["Nothing to send."] = true
 L["Open"] = true
 L["Qualities"] = true
 L["Remove %s's override"] = true
@@ -24,6 +28,7 @@ L["Remove rule"] = true
 L["Right-click: menu"] = true
 L["Rule"] = true
 L["Select a line in the tree."] = true
+L["Send"] = true
 L["Send automatically"] = true
 L["Send key"] = true
 L["Sends as soon as the mailbox opens, without the preview."] = true

@@ -14,6 +14,7 @@ local addonName, ns = ...
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog
 ---@field SettingsPanel FlagUp.SettingsPanel
 ---@field Launcher FlagUp.Launcher
+---@field MailPanel FlagUp.MailPanel
 
 ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 
@@ -22,6 +23,7 @@ ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
+frame:RegisterEvent("MAIL_SHOW")
 
 frame:SetScript("OnEvent", function(_, event, ...)
     local arg1 = ...
@@ -29,5 +31,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         ns.Store.Init()
     elseif event == "PLAYER_LOGIN" then
         ns.Launcher.Register()
+    elseif event == "MAIL_SHOW" then
+        ns.MailPanel.Open()
     end
 end)

@@ -3,7 +3,7 @@ local addonName, ns = ...
 
 local L = ns.L
 
----The rows of a category tree: the rules window's tree and the Add category dialog's.
+---The rows of a category tree: the rules window's tree and the Add category dialog's; the mailbox panel's recipient headers.
 ---@class FlagUp.TreeRow
 local TreeRow = {}
 ns.TreeRow = TreeRow
@@ -16,14 +16,15 @@ ns.TreeRow = TreeRow
 ---@field inherited boolean? the line inherits all its fields: its rule is greyed out
 ---@field overridden boolean? the character being played overrides the line: a glyph follows its name
 ---@field added boolean? in the Add category dialog: the category is already in the rules tree; the row is greyed out and marked
----@field collapsed boolean? on a category, or a subcategory that holds items; nil on a subcategory without: no open or closed mark
+---@field mails string? in the mailbox panel, on a recipient's header: its number of mails, where the Rule column is
+---@field collapsed boolean? on a category or subcategory that holds lines; nil on one without: no open or closed mark
 ---@field icon number|string? on an item
 ---@field color ColorMixin? the quality colour, on an item
 ---@field selected boolean?
 
 local NAME_LEFT = 10
--- The rule leaves room for a category's +/- mark on the right.
-local RULE_RIGHT = -28
+-- The rule leaves room for a category's +/- mark on the right; a recipient's mail count has none.
+local RULE_RIGHT, MAILS_RIGHT = -28, -8
 local OVERRIDE_GLYPH_TEXTURE = "Interface\\AddOns\\" .. addonName .. "\\Media\\Glyphs\\Person"
 local OVERRIDE_GLYPH_SIZE = 12
 local CATEGORY_HEIGHT, LINE_HEIGHT = 28, 22
@@ -90,7 +91,6 @@ local function createRow(row, ruleLeft)
 
     row.Rule = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLeft")
     row.Rule:SetPoint("LEFT", ruleLeft, 0)
-    row.Rule:SetPoint("RIGHT", RULE_RIGHT, 0)
     row.Rule:SetWordWrap(false)
 end
 
@@ -107,8 +107,9 @@ function TreeRow.Init(row, line, ruleLeft)
     row.LineHighlight:SetShown(not isCategory)
     row.Selected:SetShown(line.selected == true)
 
-    row.StateIcon:SetShown(isCategory)
-    if isCategory then
+    local hasStateIcon = isCategory and line.collapsed ~= nil
+    row.StateIcon:SetShown(hasStateIcon)
+    if hasStateIcon then
         row.StateIcon:SetAtlas(line.collapsed and "common-button-list-plus" or "common-button-list-minus", true)
     end
     local hasToggle = line.kind == "subcategory" and line.collapsed ~= nil
@@ -144,10 +145,13 @@ function TreeRow.Init(row, line, ruleLeft)
     row.Name:SetWidth(math.min(row.Name:GetUnboundedStringWidth(), nameSpace))
     row.OverrideGlyph:SetShown(line.overridden == true)
 
+    -- A recipient's mail count lines up with its items' counts, on the right.
+    row.Rule:SetPoint("RIGHT", line.mails and MAILS_RIGHT or RULE_RIGHT, 0)
+    row.Rule:SetJustifyH(line.mails and "RIGHT" or "LEFT")
     if line.added then
         row.Rule:SetText(L["already added"])
     else
-        row.Rule:SetText(line.rule or "")
+        row.Rule:SetText(line.rule or line.mails or "")
     end
     if line.inherited or line.added then
         row.Rule:SetTextColor(GRAY_FONT_COLOR:GetRGB())

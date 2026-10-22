@@ -27,7 +27,8 @@
         "FILTER",
         "CANCEL",
         "Settings",
-        "CreateSettingsListSectionHeaderInitializer"
+        "CreateSettingsListSectionHeaderInitializer",
+        "MailFrame"
     ],
     "Lua.type.weakUnionCheck": true
 }
