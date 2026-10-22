@@ -1,4 +1,4 @@
-local L = LibStub("AceLocale-3.0"):NewLocale("StashPost", "frFR")
+local L = LibStub("AceLocale-3.0"):NewLocale("FlagUp", "frFR")
 if not L then return end
 
 L["Add category"] = "Ajouter une catégorie"

@@ -1,15 +1,15 @@
 local addonName, ns = ...
----@cast ns StashPost.Namespace
+---@cast ns FlagUp.Namespace
 
 local L = ns.L
 
----@class StashPost.RulesWindow
+---@class FlagUp.RulesWindow
 ---@field Window Frame the rules window
 local RulesWindow = {}
 ns.RulesWindow = RulesWindow
 
 ---A line of the tree, ready to show.
----@class StashPost.TreeLine
+---@class FlagUp.TreeLine
 ---@field kind "category"|"subcategory"|"item"
 ---@field name string
 ---@field rule string? the rule the character being played uses, as shown in the Rule column; nil on a plain heading
@@ -59,7 +59,7 @@ local SKINNED_CHECKBOX_LABEL_GAP = 6
 -- Window -----------------------------------------------------------------------------------------
 
 -- Named: the game closes the frames listed in UISpecialFrames, by name, on Escape.
-local window = CreateFrame("Frame", "StashPostRulesWindow", UIParent, "ButtonFrameTemplate")
+local window = CreateFrame("Frame", "FlagUpRulesWindow", UIParent, "ButtonFrameTemplate")
 window:SetSize(WIDTH, HEIGHT)
 window:SetPoint("CENTER")
 window:SetTitle(C_AddOns.GetAddOnMetadata(addonName, "Title"))
@@ -68,7 +68,7 @@ window:SetMovable(true)
 window:SetClampedToScreen(true)
 window:SetFrameStrata("HIGH")
 window:SetToplevel(true)
-table.insert(UISpecialFrames, "StashPostRulesWindow")
+table.insert(UISpecialFrames, "FlagUpRulesWindow")
 window:Hide()
 window.TitleContainer:EnableMouse(true)
 window.TitleContainer:RegisterForDrag("LeftButton")
@@ -134,7 +134,7 @@ tree.Hint:SetJustifyH("LEFT")
 tree.Hint:SetText(L["Drop an item anywhere on this window to add it under its category."])
 
 ---A tree row; createRow adds its regions the first time the row is used.
----@class StashPost.TreeRow: Button
+---@class FlagUp.TreeRow: Button
 ---@field CategoryBackground Texture
 ---@field CategoryHighlight Texture
 ---@field LineHighlight Texture
@@ -146,7 +146,7 @@ tree.Hint:SetText(L["Drop an item anywhere on this window to add it under its ca
 ---@field OverrideGlyph Texture
 ---@field Rule FontString
 
----@param row StashPost.TreeRow
+---@param row FlagUp.TreeRow
 local function createRow(row)
     -- A category is a header bar, as the game's reputation list draws its headers.
     row.CategoryBackground = row:CreateTexture(nil, "BACKGROUND")
@@ -195,8 +195,8 @@ local function createRow(row)
     row.Rule:SetWordWrap(false)
 end
 
----@param row StashPost.TreeRow
----@param line StashPost.TreeLine
+---@param row FlagUp.TreeRow
+---@param line FlagUp.TreeLine
 local function initRow(row, line)
     if not row.Name then createRow(row) end
 
@@ -246,7 +246,7 @@ local function initRow(row, line)
     end
 end
 
----@param line StashPost.TreeLine
+---@param line FlagUp.TreeLine
 ---@return number
 local function rowHeight(_, line)
     return line.kind == "category" and CATEGORY_HEIGHT or LINE_HEIGHT
@@ -258,7 +258,7 @@ treeView:SetElementExtentCalculator(rowHeight)
 ScrollUtil.InitScrollBoxListWithScrollBar(tree.ScrollBox, tree.ScrollBar, treeView)
 
 ---Shows these lines in the tree, in this order.
----@param lines StashPost.TreeLine[]
+---@param lines FlagUp.TreeLine[]
 function window:ShowLines(lines)
     tree.ScrollBox:SetDataProvider(CreateDataProvider(lines), ScrollBoxConstants.RetainScrollPosition)
 end
@@ -288,21 +288,21 @@ pane.Path:SetJustifyH("LEFT")
 pane.Path:SetWordWrap(false)
 
 ---A checkbox with UICheckButtonTemplate's label.
----@class StashPost.LabeledCheckbox: CheckButton
+---@class FlagUp.LabeledCheckbox: CheckButton
 ---@field Text FontString
 
 ---A field of the line: its checkbox and label on the left, its controls on the right.
----@class StashPost.Field: Frame
----@field Checkbox StashPost.LabeledCheckbox checked: the line sets the field; unchecked: it inherits it
+---@class FlagUp.Field: Frame
+---@field Checkbox FlagUp.LabeledCheckbox checked: the line sets the field; unchecked: it inherits it
 
 ---@param label string
 ---@param height number the height of its controls
----@return StashPost.Field
+---@return FlagUp.Field
 local function createField(label, height)
-    local field = CreateFrame("Frame", nil, pane) --[[@as StashPost.Field]]
+    local field = CreateFrame("Frame", nil, pane) --[[@as FlagUp.Field]]
     field:SetHeight(height)
 
-    field.Checkbox = CreateFrame("CheckButton", nil, field, "UICheckButtonTemplate") --[[@as StashPost.LabeledCheckbox]]
+    field.Checkbox = CreateFrame("CheckButton", nil, field, "UICheckButtonTemplate") --[[@as FlagUp.LabeledCheckbox]]
     field.Checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
     -- Centred on the first row of controls, whatever size the skin gives the checkbox.
     field.Checkbox:SetPoint("LEFT", field, "TOPLEFT", -4, -CHECKBOX_SIZE / 2)
@@ -320,10 +320,10 @@ pane.RuleDropdown:SetPoint("LEFT", pane.RuleField, "TOPLEFT", FIELD_CONTROLS_LEF
 local qualityRows = math.ceil((Enum.ItemQuality.Legendary + 1) / QUALITY_COLUMNS)
 pane.QualitiesField = createField(L["Qualities"], qualityRows * CHECKBOX_SIZE)
 
----@type table<integer, StashPost.LabeledCheckbox> by item quality (Enum.ItemQuality)
+---@type table<integer, FlagUp.LabeledCheckbox> by item quality (Enum.ItemQuality)
 pane.QualityCheckboxes = {}
 for quality = Enum.ItemQuality.Poor, Enum.ItemQuality.Legendary do
-    local checkbox = CreateFrame("CheckButton", nil, pane.QualitiesField, "UICheckButtonTemplate") --[[@as StashPost.LabeledCheckbox]]
+    local checkbox = CreateFrame("CheckButton", nil, pane.QualitiesField, "UICheckButtonTemplate") --[[@as FlagUp.LabeledCheckbox]]
     checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
     local column = quality % QUALITY_COLUMNS
     local row = math.floor(quality / QUALITY_COLUMNS)
@@ -348,30 +348,30 @@ pane.RemoveRuleButton:SetText(L["Remove rule"])
 pane.RemoveRuleButton:SetSize(math.max(BUTTON_WIDTH, pane.RemoveRuleButton:GetTextWidth() + 24), BUTTON_HEIGHT)
 
 ---A field of the selected line, ready to show.
----@class StashPost.FieldDetail
+---@class FlagUp.FieldDetail
 ---@field set boolean the line sets the field; false: it inherits it
 
----@class StashPost.RuleFieldDetail: StashPost.FieldDetail
+---@class FlagUp.RuleFieldDetail: FlagUp.FieldDetail
 ---@field text string the rule as the dropdown shows it
 
----@class StashPost.QualitiesFieldDetail: StashPost.FieldDetail
+---@class FlagUp.QualitiesFieldDetail: FlagUp.FieldDetail
 ---@field selected table<integer, boolean> by item quality; none selected: no filter
 
----@class StashPost.KeepFieldDetail: StashPost.FieldDetail
+---@class FlagUp.KeepFieldDetail: FlagUp.FieldDetail
 ---@field count integer
 
 ---The selected line's shared rule, ready to show.
----@class StashPost.RuleDetail
+---@class FlagUp.RuleDetail
 ---@field name string
 ---@field path string? the categories above the line (Trade Goods › Herb)
 ---@field color ColorMixin? the quality colour, on an item
----@field rule StashPost.RuleFieldDetail
----@field qualities StashPost.QualitiesFieldDetail? on an equipment category or subcategory
----@field keep StashPost.KeepFieldDetail? on an item
+---@field rule FlagUp.RuleFieldDetail
+---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
+---@field keep FlagUp.KeepFieldDetail? on an item
 
 ---Shows a field as set by the line or inherited: an inherited field's controls are greyed out and disabled.
----@param field StashPost.Field
----@param detail StashPost.FieldDetail
+---@param field FlagUp.Field
+---@param detail FlagUp.FieldDetail
 ---@param controls table<integer, Button|EditBox> the quality checkboxes start at 0 (Poor)
 local function showField(field, detail, controls)
     field.Checkbox:SetChecked(detail.set)
@@ -382,7 +382,7 @@ local function showField(field, detail, controls)
 end
 
 ---Shows a line's shared rule in the pane.
----@param detail StashPost.RuleDetail
+---@param detail FlagUp.RuleDetail
 function window:ShowRule(detail)
     pane.Name:SetText(detail.name)
     if detail.color then

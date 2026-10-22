@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in StashPost doesn't work as it should.
+description: Something in Flag Up doesn't work as it should.
 labels: ["bug"]
 body:
   - type: markdown
@@ -10,7 +10,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: StashPost version
+      label: Flag Up version
       description: The version shown in the AddOns list at the character selection screen.
       placeholder: 0.1.0-beta.1
     validations:
@@ -53,12 +53,12 @@ body:
   - type: dropdown
     id: alone
     attributes:
-      label: With only StashPost enabled
+      label: With only Flag Up enabled
       description: Disable every other add-on in the AddOns list at the character selection screen, then try again.
       options:
         - Not tested
-        - It still happens with only StashPost enabled
-        - It doesn't happen with only StashPost enabled
+        - It still happens with only Flag Up enabled
+        - It doesn't happen with only Flag Up enabled
       default: 0
     validations:
       required: true

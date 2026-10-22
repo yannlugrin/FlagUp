@@ -1,4 +1,4 @@
-# StashPost // In-Game Test Plan
+# Flag Up // In-Game Test Plan
 
 Manual tests in the Forever client, for what can't be checked offline: the real game API and the server. For the code, see [README-Technical.md](README-Technical.md).
 

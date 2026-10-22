@@ -1,15 +1,15 @@
 ## Interface: 16001
-## Title: Stash Post
+## Title: Flag Up
 ## Notes: Mails the items you choose to your alts when you open a mailbox.
 ## Notes-frFR: Envoie par courrier les objets choisis à vos personnages quand vous ouvrez une boîte aux lettres.
 ## Category: Mail
 ## Category-frFR: Courrier
 ## Author: Mr Caillou
 ## Version: @project-version@
-## IconTexture: Interface\AddOns\StashPost\Media\Icon
+## IconTexture: Interface\AddOns\FlagUp\Media\Icon
 ## OptionalDeps: EllesmereUI
-## X-Website: https://github.com/yannlugrin/StashPost
-## X-Github: https://github.com/yannlugrin/StashPost
+## X-Website: https://github.com/yannlugrin/FlagUp
+## X-Github: https://github.com/yannlugrin/FlagUp
 ## X-License: MIT
 ## X-Curse-Project-ID: 1758443
 

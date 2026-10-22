@@ -1,7 +1,7 @@
 local addonName, ns = ...
----@cast ns StashPost.Namespace
+---@cast ns FlagUp.Namespace
 
----@class StashPost.Skin
+---@class FlagUp.Skin
 local Skin = {}
 ns.Skin = Skin
 

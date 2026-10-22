@@ -1,4 +1,4 @@
-package-as: StashPost
+package-as: FlagUp
 enable-nolib-creation: no
 
 manual-changelog:

@@ -1,8 +1,8 @@
-# StashPost // Design
+# Flag Up // Design
 
-The frames of StashPost: their structure, and their functional and visual description. For the code, see [README-Technical.md](README-Technical.md); for players, [README.md](README.md). The mockups are on the [design canvas](https://claude.ai/artifact/JnnxuCGggEvhecWfqwneph).
+The frames of Flag Up: their structure, and their functional and visual description. For the code, see [README-Technical.md](README-Technical.md); for players, [README.md](README.md). The mockups are on the [design canvas](https://claude.ai/artifact/JnnxuCGggEvhecWfqwneph).
 
-StashPost is a World of Warcraft add-on (WoW: Forever, a Classic-era world with the modern game UI). At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
+Flag Up is a World of Warcraft add-on (WoW: Forever, a Classic-era world with the modern game UI). At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
 
 ## Concepts
 
@@ -10,10 +10,10 @@ StashPost is a World of Warcraft add-on (WoW: Forever, a Classic-era world with 
 
 A recipient is one of the player's characters:
 
-- **Known**: every character that logged in with StashPost is remembered.
-- **Typed**: a name the player types ("First Surname"), for a character StashPost hasn't seen, such as an alt on another account.
+- **Known**: every character that logged in with Flag Up is remembered.
+- **Typed**: a name the player types ("First Surname"), for a character Flag Up hasn't seen, such as an alt on another account.
 
-Mail only reaches a character of the same ruleset and faction, so StashPost keeps the characters and rules of each ruleset and faction apart (PvP Alliance, PvP Horde, Normal Horde…). The character being played sees all the rules of its ruleset and faction, with the overrides of every character of it, not only its own; it never sees another ruleset or faction. A typed character belongs to the ruleset and faction of the character that typed it.
+Mail only reaches a character of the same ruleset and faction, so Flag Up keeps the characters and rules of each ruleset and faction apart (PvP Alliance, PvP Horde, Normal Horde…). The character being played sees all the rules of its ruleset and faction, with the overrides of every character of it, not only its own; it never sees another ruleset or faction. A typed character belongs to the ruleset and faction of the character that typed it.
 
 Mail never goes to the character being played. Bound items are never sent.
 
@@ -73,7 +73,7 @@ The game's categories as a tree, with a filter. A category already in the tree i
 
 The game's own settings list, laid out like its options (label left, control right):
 
-- **General**: show the minimap button; show StashPost in the add-on compartment.
+- **General**: show the minimap button; show Flag Up in the add-on compartment.
 - **Mailbox**: **Send automatically**; **Send key** (Shift, Ctrl, Alt, None; Shift by default). Like the game's auto-loot key: with automatic sending on, holding the key when the mailbox opens skips sending; with it off, holding it sends.
 
 ### 6. Minimap Button and Add-on Compartment
@@ -93,7 +93,7 @@ With automatic sending on (or the send key held while it is off), the panel open
 
 - Each mail with its recipient and items, marked *Sent*, *Sending…*, *Waiting* or *Failed*. A failed mail shows the game's error in red under it, and sending goes on with the next mail.
 - At the bottom: how many are sent and failed, and **Stop**.
-- Every mail's subject is "StashPost".
+- Every mail's subject is "Flag Up parcel".
 
 ### 9. Remove Rule (Dialog)
 
@@ -105,11 +105,11 @@ Opens on **Remove rule**, always, and when the last checked field of the line is
 
 ## Commands
 
-- `/stashpost`: lists the commands.
-- `/stashpost open`: opens the rules window.
-- `/stashpost settings`: opens frame 5.
+- `/flagup`: lists the commands.
+- `/flagup open`: opens the rules window.
+- `/flagup settings`: opens frame 5.
 
 ## Open Questions
 
-- An alt on another account can't receive account-bound items: how StashPost knows a typed character is on another account.
-- Search by name in Add item, for later: the game finds an item by its exact name only once it has been in the bags or bank this session, and has no search by part of a name; a search would cover a list StashPost builds itself.
+- An alt on another account can't receive account-bound items: how Flag Up knows a typed character is on another account.
+- Search by name in Add item, for later: the game finds an item by its exact name only once it has been in the bags or bank this session, and has no search by part of a name; a search would cover a list Flag Up builds itself.
