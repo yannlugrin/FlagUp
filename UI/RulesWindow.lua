@@ -28,6 +28,8 @@ local PANE_PADDING = 12
 -- The pane leaves as much room on the window's right as the tree on its left.
 local PANE_WIDTH = WIDTH - TREE_LEFT - TREE_WIDTH - PANE_GAP - TREE_LEFT
 local FIELD_SPACING = 12
+-- Between the shared rule's Remove rule and the overrides' divider.
+local SECTION_SPACING = 20
 -- A field's controls start right of its checkbox and label.
 local FIELD_CONTROLS_LEFT = 120
 local CHECKBOX_SIZE = 26
@@ -201,6 +203,8 @@ end
 ---@field QualityCheckboxes table<integer, FlagUp.LabeledCheckbox> by item quality (Enum.ItemQuality)
 ---@field KeepField FlagUp.Field on an item
 ---@field KeepInput EditBox
+---@field StacksField FlagUp.Field
+---@field StacksDropdown FlagUp.Dropdown
 
 local qualityRows = math.ceil((Enum.ItemQuality.Legendary + 1) / QUALITY_COLUMNS)
 
@@ -237,6 +241,12 @@ local function createFieldSet()
     set.KeepInput:SetAutoFocus(false)
     set.KeepInput:SetJustifyH("CENTER")
 
+    -- Full stacks only, or any amount.
+    set.StacksField = createField(L["Stacks"], CHECKBOX_SIZE)
+    set.StacksDropdown = CreateFrame("DropdownButton", nil, set.StacksField, "WowStyle1DropdownTemplate") --[[@as FlagUp.Dropdown]]
+    set.StacksDropdown:SetWidth(RULE_DROPDOWN_WIDTH)
+    set.StacksDropdown:SetPoint("LEFT", set.StacksField, "TOPLEFT", FIELD_CONTROLS_LEFT, -CHECKBOX_SIZE / 2)
+
     return set
 end
 
@@ -250,7 +260,7 @@ pane.RemoveRuleButton:SetSize(math.max(BUTTON_WIDTH, pane.RemoveRuleButton:GetTe
 -- The character overrides, under the shared rule.
 pane.Divider = content:CreateTexture(nil, "ARTWORK")
 pane.Divider:SetAtlas("Options_HorizontalDivider", true)
-pane.Divider:SetPoint("TOPLEFT", pane.RemoveRuleButton, "BOTTOMLEFT", 0, -FIELD_SPACING)
+pane.Divider:SetPoint("TOPLEFT", pane.RemoveRuleButton, "BOTTOMLEFT", 0, -SECTION_SPACING)
 pane.Divider:SetPoint("RIGHT", -PANE_PADDING, 0)
 
 pane.OverridesTitle = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -320,6 +330,9 @@ end
 ---@class FlagUp.KeepFieldDetail: FlagUp.FieldDetail
 ---@field count integer
 
+---@class FlagUp.StacksFieldDetail: FlagUp.FieldDetail
+---@field fullStacksOnly boolean only full stacks are sent, of what stacks
+
 ---The selected line's character overrides, ready to show.
 ---@class FlagUp.OverridesDetail
 ---@field characters string[] the tags: the character being played, then the characters that override the line
@@ -328,6 +341,7 @@ end
 ---@field rule FlagUp.RuleFieldDetail the selected character's fields
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
+---@field stacks FlagUp.StacksFieldDetail
 
 ---The selected line, ready to show.
 ---@class FlagUp.RuleDetail
@@ -337,6 +351,7 @@ end
 ---@field rule FlagUp.RuleFieldDetail
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
+---@field stacks FlagUp.StacksFieldDetail
 ---@field overrides FlagUp.OverridesDetail
 
 ---Shows a field as set or taken from above: a field taken from above has its controls greyed out and disabled.
@@ -375,6 +390,10 @@ local function showFieldSet(set, detail)
         showField(set.KeepField, detail.keep, { set.KeepInput })
         fields[#fields + 1] = set.KeepField
     end
+
+    set.StacksDropdown:OverrideText(detail.stacks.fullStacksOnly and L["Full stacks only"] or L["Any amount"])
+    showField(set.StacksField, detail.stacks, { set.StacksDropdown })
+    fields[#fields + 1] = set.StacksField
 
     return fields
 end
@@ -444,7 +463,7 @@ function window:ShowRule(detail)
 
     -- Only a character with an override has one to remove.
     local hasOverride = overrides.rule.set or (overrides.qualities ~= nil and overrides.qualities.set)
-        or (overrides.keep ~= nil and overrides.keep.set)
+        or (overrides.keep ~= nil and overrides.keep.set) or overrides.stacks.set
     pane.RemoveOverrideButton:SetShown(hasOverride)
     pane.RemoveOverrideButton:SetText(L["Remove %s's override"]:format(overrides.selected))
     pane.RemoveOverrideButton:SetWidth(math.max(BUTTON_WIDTH, pane.RemoveOverrideButton:GetTextWidth() + 24))
@@ -470,7 +489,9 @@ ns.Skin.Apply(function(S)
     S.Inset(pane.Inset)
     for _, set in ipairs({ pane.Shared, pane.Override }) do
         S.Dropdown(set.RuleDropdown)
-        local checkboxes = { set.RuleField.Checkbox, set.QualitiesField.Checkbox, set.KeepField.Checkbox }
+        S.Dropdown(set.StacksDropdown)
+        local checkboxes = { set.RuleField.Checkbox, set.QualitiesField.Checkbox, set.KeepField.Checkbox,
+            set.StacksField.Checkbox }
         for _, checkbox in pairs(set.QualityCheckboxes) do checkboxes[#checkboxes + 1] = checkbox end
         for _, checkbox in ipairs(checkboxes) do
             S.Checkbox(checkbox)

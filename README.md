@@ -10,7 +10,8 @@ For **World of Warcraft: Forever**. Source code, issues and releases: [github.co
 
 - *Coming:* **Rules by category.** Choose what goes where by the game's item categories (Trade Goods › Herb to your alchemist, Metal & Stone to your blacksmith), or item by item. A specific item comes first, then a subcategory, then a category.
 - *Coming:* **Keep some in your bags.** For a specific item, keep a number in your bags and send only the rest, or don't send it.
-- *Coming:* **Shared by your characters.** The rules are the same for all your characters of one ruleset and faction, the ones that can mail each other; a character can override a rule for itself: another recipient, don't send, another number to keep, other qualities.
+- *Coming:* **Full stacks only.** Send only full stacks of what stacks; the rest waits in your bags until it makes a full one.
+- *Coming:* **Shared by your characters.** The rules are the same for all your characters of one ruleset and faction, the ones that can mail each other; a character can override a rule for itself: another recipient, don't send, another number to keep, other qualities, full stacks or not.
 - *Coming:* **Any alt.** Pick from the characters you logged in with Flag Up, or type the name of an alt on another account.
 - *Coming:* **At the mailbox.** A panel next to the mailbox lists what will be sent, alt by alt, with the postage; uncheck an item to keep it this time. Then it sends mail after mail and shows each one sent, or failed with the game's reason.
 - *Coming:* **Automatic or on demand.** Send as soon as the mailbox opens, or only when you click Send. A key you choose (Shift by default) does the opposite while you hold it, like the game's auto-loot key.

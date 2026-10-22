@@ -68,7 +68,7 @@ FlagUpDB = {
                         [4] = { [1] = { qualities = { [2] = true, [3] = true, [4] = true } } }, -- Cloth, rule inherited
                     },
                     items = {             -- by item ID
-                        [2447] = { sendTo = "Lyra Moonfield", keep = 20,
+                        [2447] = { sendTo = "Lyra Moonfield", keep = 20, fullStacksOnly = true,
                             overrides = { ["Silvia Ashgrove"] = { sendTo = "Borin Ironhand", keep = 50 } } },
                     },
                 },
@@ -87,9 +87,10 @@ FlagUpDB = {
 
 - **A ruleset-faction pair** gets its entry when its first character logs in; it starts with no rules.
 - **A typed character** joins the pair of the character that typed it.
-- **A line** is one entry in `rules`, added by the player; it stays until removed. A field the line doesn't set is `nil`: it is inherited from the line above (item → subcategory → category), and above the categories from the defaults (*Don't send*, no quality filter, nothing kept). A new line sets no field.
+- **A line** is one entry in `rules`, added by the player; it stays until removed. A field the line doesn't set is `nil`: it is inherited from the line above (item → subcategory → category), and above the categories from the defaults (*Don't send*, no quality filter, nothing kept, any amount). A new line sets no field.
 - **`sendTo`**: the recipient's name, or `false` for *Don't send*.
 - **`qualities`** (Armor and Weapon categories and subcategories): the selected qualities; an empty table means none selected, no filter.
 - **`keep`** (items): how many stay in the bags; `nil` takes the default, nothing kept.
-- **`overrides`** (any line): by the overriding character's name, only the fields that character overrides (`sendTo`, `keep`, `qualities`, as on the line). The tree marks a line with a glyph when the character being played has an entry in its `overrides`.
+- **`fullStacksOnly`** (any line): `true` sends only full stacks of an item that stacks, counted from what is left after `keep`; `false` sends any amount; `nil` inherits, and the default is any amount.
+- **`overrides`** (any line): by the overriding character's name, only the fields that character overrides (`sendTo`, `keep`, `qualities`, `fullStacksOnly`, as on the line). The tree marks a line with a glyph when the character being played has an entry in its `overrides`.
 - **Not saved**: an item's name, quality, icon and category, read from the game by item ID; category names, read by class and subclass ID; the mailbox checkboxes, which last one run.
