@@ -22,7 +22,8 @@
         "CreateDataProvider",
         "ScrollBoxConstants",
         "ColorManager",
-        "SlashCmdList"
+        "SlashCmdList",
+        "ButtonFrameTemplate_HidePortrait"
     ],
     "Lua.type.weakUnionCheck": true
 }

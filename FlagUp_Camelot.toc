@@ -19,3 +19,4 @@ Locales\frFR.lua
 Core\Core.lua
 UI\Skin.lua
 UI\RulesWindow.lua
+UI\AddItemDialog.lua
