@@ -8,6 +8,7 @@
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\FlagUp\Media\Icon
 ## OptionalDeps: EllesmereUI
+## SavedVariables: FlagUpDB
 ## X-Website: https://github.com/yannlugrin/FlagUp
 ## X-Github: https://github.com/yannlugrin/FlagUp
 ## X-License: MIT
@@ -17,8 +18,10 @@ Libs.xml
 Locales\enUS.lua
 Locales\frFR.lua
 Core\Core.lua
+Core\Store.lua
 UI\Skin.lua
 UI\TreeRow.lua
 UI\RulesWindow.lua
 UI\AddItemDialog.lua
 UI\AddCategoryDialog.lua
+UI\Settings.lua

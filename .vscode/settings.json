@@ -25,7 +25,9 @@
         "SlashCmdList",
         "ButtonFrameTemplate_HidePortrait",
         "FILTER",
-        "CANCEL"
+        "CANCEL",
+        "Settings",
+        "CreateSettingsListSectionHeaderInitializer"
     ],
     "Lua.type.weakUnionCheck": true
 }
