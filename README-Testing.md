@@ -6,8 +6,9 @@ Manual tests in the Forever client, for what can't be checked offline: the real 
 
 - Two characters of the same account in the same ruleset: the one sending, and the one receiving.
 
-## Still to Test
+## Tested in 1.0.0
 
 - Sending to a "First Surname" name with `SendMail`.
 - Attaching several bag slots in a row, and a part of a stack after splitting it.
 - Sending as soon as the mailbox opens.
+- The postage the game takes matches the mailbox panel's (30 copper per attachment).

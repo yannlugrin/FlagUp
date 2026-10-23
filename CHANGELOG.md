@@ -4,6 +4,8 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-23
+
 ### Added
 
 - Rules window: choose what goes where by the game's item categories and subcategories, or item by item; add a category from the game's list, an item by its ID, its link or by dropping it on the window; a search box filters the tree by name.
@@ -16,4 +18,5 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 - Items worth less than their postage start unchecked at the mailbox; a setting turns it off, another one does the same for items without a vendor price.
 - Settings in Options › AddOns, a minimap button, an add-on compartment entry and the `/flagup` commands.
 
-[Unreleased]: https://github.com/yannlugrin/FlagUp/commits/main
+[Unreleased]: https://github.com/yannlugrin/FlagUp/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/yannlugrin/FlagUp/releases/tag/1.0.0

@@ -2,7 +2,7 @@
 
 Architecture notes and contribution guidance for developers working on Flag Up. For end-user documentation, see [README.md](README.md).
 
-> **Status: in development.** The add-on loads and does nothing yet. Update this file as each part is built.
+> **Status: 1.0.0.** Update this file as the add-on changes.
 
 ## File Map
 
@@ -55,8 +55,6 @@ FlagUp/
 ```
 
 ## Saved Data
-
-> **Built: the settings, the known characters, the rule lines (adding, resolving, editing). Proposal, not built yet: the rest.**
 
 One account-wide SavedVariables table, `FlagUpDB`, kept by AceDB (`Core/Store.lua`): the data in `global`, the settings in one "Default" profile shared by every character. AceDB saves only the values that differ from their defaults. Mail only reaches a character of the same ruleset and faction, so characters and rules are kept apart by ruleset and faction (`"PvP-Alliance"`, `"Normal-Horde"`…). A character works on its own pair's entry: all its rules, with the overrides of all its characters. The settings are account-wide. Characters are named "First Surname", the name the game gives a character on WoW: Forever, unique within a ruleset.
 

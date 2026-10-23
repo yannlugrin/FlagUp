@@ -4,7 +4,7 @@ Mail the items you choose to your alts, each to the right one, when you open a m
 
 For **World of Warcraft: Forever**. Source code, issues and releases: [github.com/yannlugrin/FlagUp](https://github.com/yannlugrin/FlagUp).
 
-> **In development.** Not released yet: the first version is being tested.
+> Please report what goes wrong or any suggestion (see [Reporting a problem](#reporting-a-problem)).
 
 ## Features
 
