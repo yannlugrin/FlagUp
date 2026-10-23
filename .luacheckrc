@@ -24,5 +24,5 @@ read_globals = {
     "ChatFrameUtil", "ChatEdit_InsertLink", "hooksecurefunc", "tContains",
     "CopyTable", "StaticPopup_Show", "OKAY", "strtrim",
     "C_Container", "BACKPACK_CONTAINER", "NUM_BAG_SLOTS", "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "ClearSendMail", "ClickSendMailItemButton", "SendMail",
-    "CursorHasItem", "C_Timer", "BACK",
+    "CursorHasItem", "C_Timer", "BACK", "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown",
 }

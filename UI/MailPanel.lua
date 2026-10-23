@@ -466,8 +466,8 @@ local function sendingMails(parcels)
     return mails
 end
 
--- Send: the checked items, mail by mail; the sending view follows each mail.
-panel.SendButton:SetScript("OnClick", function()
+---Sends the checked items, mail by mail; the sending view follows each mail.
+local function startSending()
     local shipments = {}
     for _, shipment in ipairs(ns.Mailing.Shipments()) do
         if not skipped[shipment.itemID] then shipments[#shipments + 1] = shipment end
@@ -477,10 +477,29 @@ panel.SendButton:SetScript("OnClick", function()
     local function show() panel:ShowSending(sendingMails(parcels)) end
     show()
     ns.Mailing.Send(parcels, show)
-end)
+end
+
+panel.SendButton:SetScript("OnClick", startSending)
 
 panel.StopButton:SetScript("OnClick", function() ns.Mailing.Stop() end)
 panel.BackButton:SetScript("OnClick", function() panel:ShowPreview(mailPreview()) end)
+
+---@type table<string, fun(): boolean> by the Send key setting: whether that key is held
+local SEND_KEY_HELD = {
+    SHIFT = IsShiftKeyDown,
+    CTRL = IsControlKeyDown,
+    ALT = IsAltKeyDown,
+    NONE = function() return false end,
+}
+
+---Whether the mailbox sends as soon as it opens: with Send automatically on, unless the Send key is held; with it
+---off, only while the Send key is held, as the game's auto loot key works.
+---@return boolean
+local function sendsAtOnce()
+    local keyHeld = SEND_KEY_HELD[ns.settings.sendKey]() == true
+    if ns.settings.sendAutomatically then return not keyHeld end
+    return keyHeld
+end
 
 ---Shows the panel beside the open mailbox. Call on MAIL_SHOW.
 function MailPanel.Open()
@@ -490,8 +509,10 @@ function MailPanel.Open()
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", MAILBOX_GAP, 0)
     panel:SetPoint("BOTTOMLEFT", MailFrame, "BOTTOMRIGHT", MAILBOX_GAP, 0)
     skipped = {}
-    panel:ShowPreview(mailPreview())
+    local preview = mailPreview()
+    panel:ShowPreview(preview)
     panel:Show()
+    if sendsAtOnce() and preview.mails > 0 then startSending() end
 end
 
 ---Shows the preview again, while the panel is open. Call when the bags change.
