@@ -38,7 +38,9 @@
         "StaticPopup_Show",
         "OKAY",
         "BACKPACK_CONTAINER",
-        "NUM_BAG_SLOTS"
+        "NUM_BAG_SLOTS",
+        "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
+        "BACK"
     ],
     "Lua.type.weakUnionCheck": true
 }
