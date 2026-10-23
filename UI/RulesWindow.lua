@@ -156,36 +156,96 @@ local function itemLineID(itemID)
     return "i:" .. itemID
 end
 
+---A line shown in the tree, a rule line or a plain heading, as the pane needs it.
+---@class FlagUp.ShownLine
+---@field place FlagUp.LinePlace
+---@field name string
+---@field path string the categories above it and its name (Trade Goods › Herb › Peacebloom)
+---@field color ColorMixin? on an item
+
 ---@type table<string, true> the lines closed this session, by ID
 local closed = {}
 ---@type string? the selected line's ID
 local selectedID
+---@type string? the character whose override the pane shows; nil: the one being played
+local shownCharacter
+---@type table<string, FlagUp.ShownLine> the lines of the tree last shown, by ID
+local shownLines = {}
 ---@type table<integer, true> the items whose data the client is loading, by item ID
 local loadingItems = {}
 
+local PATH_SEPARATOR = " › "
+
+---@param sendTo string|false
+---@return string
+local function ruleText(sendTo)
+    return sendTo and L["Send to %s"]:format(sendTo) or L["Don't send"]
+end
+
+---What a character does with a line, as the Rule column shows it: the recipient, then whether only full stacks go,
+---then how many are kept.
+---@param place FlagUp.LinePlace
+---@param character string
+---@return string
+local function treeRuleText(place, character)
+    local sendTo = ns.Rules.Value(place, "sendTo", character)
+    if not sendTo then return L["Don't send"] end
+    local text = sendTo
+    if ns.Rules.Value(place, "fullStacksOnly", character) then text = L["%s, full stacks"]:format(text) end
+    if ns.Rules.HasField(place, "keep") then
+        local keep = ns.Rules.Value(place, "keep", character)
+        if keep > 0 then text = L["%s, keep %d"]:format(text, keep) end
+    end
+    return text
+end
+
+---@param fields FlagUp.Line|table a line, or a character's override of it
+---@return boolean
+local function setsAField(fields)
+    for _, field in ipairs(ns.Rules.FIELDS) do
+        if fields[field] ~= nil then return true end
+    end
+    return false
+end
+
+---A tree line, selected with a click. A rule line shows what the character being played does with it; a plain
+---heading, above lines without being one, shows no rule.
 ---@param kind "category"|"subcategory"|"item"
 ---@param id string
----@param name string
 ---@param holdsLines boolean it has lines under it: it opens and closes
+---@param shown FlagUp.ShownLine
 ---@return FlagUp.TreeLine
-local function treeLine(kind, id, name, holdsLines)
-    local line = { kind = kind, id = id, name = name, selected = id == selectedID }
+local function treeLine(kind, id, holdsLines, shown)
+    shownLines[id] = shown
+    local line = { kind = kind, id = id, name = shown.name, selected = id == selectedID }
     if holdsLines then line.collapsed = closed[id] == true end
-    line.onClick = function()
-        selectedID = id
-        RulesWindow.Refresh()
-    end
     line.onToggle = function()
         closed[id] = not closed[id] or nil
         RulesWindow.Refresh()
+    end
+    line.onClick = function()
+        if selectedID ~= id then shownCharacter = nil end
+        selectedID = id
+        RulesWindow.Refresh()
+    end
+
+    local rule = ns.Rules.LineAt(shown.place)
+    if rule then
+        local player = ns.Characters.PlayerName()
+        local override = rule.overrides and rule.overrides[player]
+        line.rule = treeRuleText(shown.place, player)
+        line.overridden = override ~= nil and setsAField(override)
+        line.inherited = not setsAField(rule) and not line.overridden
     end
     return line
 end
 
 ---An item's line; while the client loads the item's name, the line says so and the tree is shown again once loaded.
 ---@param itemID integer
+---@param classID integer
+---@param subClassID integer
 ---@return FlagUp.TreeLine
-local function itemTreeLine(itemID)
+local function itemTreeLine(itemID, classID, subClassID)
     local name = C_Item.GetItemNameByID(itemID)
     if not name and not loadingItems[itemID] then
         loadingItems[itemID] = true
@@ -194,10 +254,16 @@ local function itemTreeLine(itemID)
             RulesWindow.Refresh()
         end)
     end
-    local line = treeLine("item", itemLineID(itemID), name or RETRIEVING_ITEM_INFO, false)
-    line.icon = C_Item.GetItemIconByID(itemID)
+    name = name or RETRIEVING_ITEM_INFO
     local quality = C_Item.GetItemQualityByID(itemID)
-    line.color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR
+    local color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR
+    local path = table.concat({ ns.Categories.Name(classID), ns.Categories.Name(classID, subClassID), name },
+        PATH_SEPARATOR)
+    local line = treeLine("item", itemLineID(itemID), false, {
+        place = { classID = classID, subClassID = subClassID, itemID = itemID }, name = name, path = path, color = color,
+    })
+    line.icon = C_Item.GetItemIconByID(itemID)
+    line.color = color
     return line
 end
 
@@ -206,6 +272,7 @@ end
 ---@return FlagUp.TreeLine[]
 local function rulesTreeLines()
     local rules = ns.Rules.Lines()
+    shownLines = {}
 
     -- The items' lines by class, then subclass.
     ---@type table<integer, table<integer, FlagUp.TreeLine[]>>
@@ -215,7 +282,7 @@ local function rulesTreeLines()
         if classID then
             itemLines[classID] = itemLines[classID] or {}
             itemLines[classID][subClassID] = itemLines[classID][subClassID] or {}
-            table.insert(itemLines[classID][subClassID], itemTreeLine(itemID))
+            table.insert(itemLines[classID][subClassID], itemTreeLine(itemID, classID, subClassID))
         end
     end
 
@@ -235,12 +302,16 @@ local function rulesTreeLines()
 
         if rules.categories[classID] or #shownSubcategories > 0 then
             local id = categoryLineID(classID)
-            lines[#lines + 1] = treeLine("category", id, category.name, #shownSubcategories > 0)
+            lines[#lines + 1] = treeLine("category", id, #shownSubcategories > 0,
+                { place = { classID = classID }, name = category.name, path = category.name })
             if not closed[id] then
                 for _, subcategory in ipairs(shownSubcategories) do
                     local subID = categoryLineID(classID, subcategory.subClassID)
                     local subItemLines = classItemLines[subcategory.subClassID]
-                    lines[#lines + 1] = treeLine("subcategory", subID, subcategory.name, subItemLines ~= nil)
+                    lines[#lines + 1] = treeLine("subcategory", subID, subItemLines ~= nil, {
+                        place = { classID = classID, subClassID = subcategory.subClassID }, name = subcategory.name,
+                        path = category.name .. PATH_SEPARATOR .. subcategory.name,
+                    })
                     if subItemLines and not closed[subID] then
                         table.sort(subItemLines, function(a, b) return a.name < b.name end)
                         for _, itemLine in ipairs(subItemLines) do lines[#lines + 1] = itemLine end
@@ -252,15 +323,77 @@ local function rulesTreeLines()
     return lines
 end
 
----Shows the rules in the tree again.
+---The fields of a line, or of a character's override of it, as the pane shows them: each set or not, with the value
+---it takes.
+---@param place FlagUp.LinePlace
+---@param fields FlagUp.Line|table the line, or the character's override of it
+---@param character string? nil: the shared rule
+---@return table detail rule, qualities, keep and stacks, as FlagUp.RuleDetail and FlagUp.OverridesDetail hold them
+local function fieldsDetail(place, fields, character)
+    local Rules = ns.Rules
+    local detail = {
+        rule = { set = fields.sendTo ~= nil, text = ruleText(Rules.Value(place, "sendTo", character)) },
+        stacks = { set = fields.fullStacksOnly ~= nil, fullStacksOnly = Rules.Value(place, "fullStacksOnly", character) },
+    }
+    if Rules.HasField(place, "qualities") then
+        detail.qualities = { set = fields.qualities ~= nil, selected = Rules.Value(place, "qualities", character) }
+    end
+    if Rules.HasField(place, "keep") then
+        detail.keep = { set = fields.keep ~= nil, count = Rules.Value(place, "keep", character) }
+    end
+    return detail
+end
+
+---The selected line as the pane shows it: its shared rule, then the override of the character shown. A plain heading
+---sets nothing: every field shows what it inherits.
+---@param shown FlagUp.ShownLine
+---@return FlagUp.RuleDetail
+local function ruleDetail(shown)
+    local rule = ns.Rules.LineAt(shown.place) or {}
+    local overrides = rule.overrides or {}
+    local player = ns.Characters.PlayerName()
+
+    -- The tags: the character being played, then those that override the line, by name.
+    local characters = {}
+    for name in pairs(overrides) do
+        if name ~= player then characters[#characters + 1] = name end
+    end
+    table.sort(characters)
+    table.insert(characters, 1, player)
+
+    local addable = {}
+    for _, name in ipairs(ns.Characters.KnownNames()) do
+        if name ~= player and not overrides[name] then addable[#addable + 1] = name end
+    end
+
+    if not tContains(characters, shownCharacter) then shownCharacter = player end
+
+    local detail = fieldsDetail(shown.place, rule, nil) --[[@as FlagUp.RuleDetail]]
+    detail.name, detail.path, detail.color = shown.name, shown.path, shown.color
+    local overridesDetail = fieldsDetail(shown.place, overrides[shownCharacter] or {}, shownCharacter)
+    overridesDetail.characters = characters
+    overridesDetail.selected = shownCharacter
+    overridesDetail.addable = addable
+    overridesDetail.onSelectCharacter = function(name)
+        shownCharacter = name
+        RulesWindow.Refresh()
+    end
+    detail.overrides = overridesDetail
+    return detail
+end
+
+---Shows the rules in the tree again, and the selected line in the pane.
 function RulesWindow.Refresh()
     window:ShowLines(rulesTreeLines())
+    local shown = selectedID and shownLines[selectedID]
+    window:ShowRule(shown and ruleDetail(shown) or nil)
 end
 
 ---Selects a line, opening the lines above it, and scrolls the tree to it.
 ---@param id string
 ---@param above string[] the IDs of the lines above it
 local function selectLine(id, above)
+    if selectedID ~= id then shownCharacter = nil end
     selectedID = id
     for _, aboveID in ipairs(above) do closed[aboveID] = nil end
     RulesWindow.Refresh()
@@ -498,6 +631,7 @@ end
 ---@field characters string[] the tags: the character being played, then the characters that override the line
 ---@field selected string the character whose override shows
 ---@field addable string[] the + menu: the known characters without an override on the line, the one being played left out
+---@field onSelectCharacter fun(name: string)? a click on a character's tag
 ---@field rule FlagUp.RuleFieldDetail the selected character's fields
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
@@ -603,6 +737,7 @@ function window:ShowRule(detail)
         else
             tag:UnlockHighlight()
         end
+        tag:SetScript("OnClick", overrides.onSelectCharacter and function() overrides.onSelectCharacter(name) end or nil)
         tag:Show()
         tags[index] = tag
     end

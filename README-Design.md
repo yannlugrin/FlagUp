@@ -36,6 +36,8 @@ Each line holds these fields:
 
 A character can override a shared rule for itself, field by field: the rule (another recipient, or don't send), the keep count, the qualities, the stacks. A character's "own" rule is an override of a shared rule: for example a shared "Herb: Don't send" that one character overrides to "Send to Lyra". There are no per-character rule lists.
 
+For each field, the closest line that sets it decides, from the item up to its category; on one line, the character's override comes before the shared value. With a shared Herb *Don't send* that Silvia overrides to *Send to Lyra*, and a shared Peacebloom *Send to Borin*, Silvia sends Peacebloom to Borin and the other herbs to Lyra.
+
 ## Design Constraints
 
 - **Look**: the default game look, built from the game's own templates; with EllesmereUI installed, the same frames take its theme through its skinning API. No custom-styled widgets.
@@ -49,7 +51,7 @@ A character can override a shared rule for itself, field by field: the rule (ano
 A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
-- **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*. *Rule* shows what the character being played will do with the line: the recipient's name or *Don't send*, then ", full stacks" when only full stacks are sent, then ", keep 20" when some are kept (Lyra Moonfield, full stacks, keep 20); it is greyed out when the line inherits all its fields. When that character overrides the line, *Rule* shows its override and a small glyph follows the line's name; who else overrides it is in the pane's overrides section (frame 2). Categories collapse with the game's +/− buttons. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
+- **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*. *Rule* shows what the character being played will do with the line: the recipient's name or *Don't send*, then ", full stacks" when only full stacks are sent, then ", keep 20" when some are kept (Lyra Moonfield, full stacks, keep 20); it is greyed out when the line inherits all its fields. When that character overrides the line, *Rule* shows its override and a small glyph follows the line's name; who else overrides it is in the pane's overrides section (frame 2). A plain heading can be selected too: the pane shows what it inherits, every field unchecked. Categories collapse with the game's +/− buttons. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
 - **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep** on an item, **Stacks** (one dropdown: *Full stacks only* and *Any amount*). Then **Remove rule** (frame 9). Unchecking the last checked field also opens frame 9. With no line selected, the pane shows only *Select a line in the tree.*
 
 ### 2. Rules Window — Character Overrides Section

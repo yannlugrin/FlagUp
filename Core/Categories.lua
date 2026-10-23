@@ -48,3 +48,12 @@ function Categories.All()
     end
     return all
 end
+
+---A category's or subcategory's name, as the client gives it.
+---@param classID integer
+---@param subClassID integer? nil: the category itself
+---@return string
+function Categories.Name(classID, subClassID)
+    if subClassID == nil then return C_Item.GetItemClassInfo(classID) end
+    return (C_Item.GetItemSubClassInfo(classID, subClassID))
+end

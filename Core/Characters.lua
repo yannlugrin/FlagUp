@@ -26,10 +26,10 @@ local function ruleset()
     return "Normal"
 end
 
----The character's whole name, "First Surname". On Forever, UnitFullName returns the surname where retail returns the
----realm.
+---The character being played's whole name, "First Surname". On Forever, UnitFullName returns the surname where retail
+---returns the realm.
 ---@return string
-local function playerName()
+function Characters.PlayerName()
     local name, surname = UnitFullName("player")
     return surname and (name .. " " .. surname) or name
 end
@@ -49,5 +49,16 @@ end
 ---Adds the character being played to the known characters of its ruleset and faction. A character typed before
 ---becomes known. Call on PLAYER_LOGIN.
 function Characters.RecordPlayer()
-    Characters.PlayerRulesetFaction().characters[playerName()] = { typed = false }
+    Characters.PlayerRulesetFaction().characters[Characters.PlayerName()] = { typed = false }
+end
+
+---The names of the characters of the ruleset and faction being played that logged in with Flag Up, by name.
+---@return string[]
+function Characters.KnownNames()
+    local names = {}
+    for name, character in pairs(Characters.PlayerRulesetFaction().characters) do
+        if not character.typed then names[#names + 1] = name end
+    end
+    table.sort(names)
+    return names
 end
