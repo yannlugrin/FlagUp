@@ -64,6 +64,6 @@ Update the documents your change touches, in the same pull request:
        found { print }' CHANGELOG.md | tr -d '\r'; } | git tag -a "$version" --cleanup=whitespace -F -
    ```
    Check it with `git for-each-ref "refs/tags/$version" --format='%(contents)'`, then push the branch, wait for its Checks to pass, and push the tag. A tag containing `alpha` or `beta` makes an alpha or beta release; any other tag, a full release.
-4. `.github/workflows/package.yml` stops unless the Checks passed on the tagged commit, then packages the add-on and creates the GitHub release with that version's section of the changelog; it uploads to CurseForge once the TOC has an `X-Curse-Project-ID`. It stops if the changelog has no section for the tag.
+4. `.github/workflows/package.yml` stops unless the Checks passed on the tagged commit, then packages the add-on and creates the GitHub release with that version's section of the changelog; it uploads to CurseForge once the TOC has an `X-Curse-Project-ID`. It stops if the changelog has no section for the tag. Then it posts the release on Discord, that version's section linked to CurseForge and to the GitHub release, when the repository has a `DISCORD_WEBHOOK_URL` secret (the channel's webhook); Actions › *Announce on Discord* posts a release again, by its tag.
 
 A pushed tag is final: never delete it or push it again. A mistake found after the push is fixed in the next version.

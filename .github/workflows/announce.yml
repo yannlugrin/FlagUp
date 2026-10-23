@@ -1,0 +1,28 @@
+name: Announce on Discord
+
+# Posts a release on Discord again, from its tag's CHANGELOG.md: to try the post, or when the release workflow's post
+# failed. The release workflow posts each release by itself.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The release's tag, for example 0.1.0"
+        required: true
+        type: string
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      # The tag's CHANGELOG.md, and the script as it is now on the default branch, whatever the tag holds.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.version }}
+      - uses: actions/checkout@v7
+        with:
+          path: current
+      - name: Announce on Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          VERSION: ${{ inputs.version }}
+        run: bash current/.github/scripts/announce-discord.sh "$VERSION"

@@ -11,8 +11,11 @@ FlagUp/
 ├── .github/ISSUE_TEMPLATE/
 │   └── bug_report.yml             Bug report form: version, game build, steps, Lua error
 ├── .github/workflows/
-│   ├── package.yml                BigWigs packager on tag push: the GitHub release with this version's changelog
+│   ├── package.yml                BigWigs packager on tag push: the GitHub release with this version's changelog, then the Discord post
+│   ├── announce.yml               Posts a release on Discord again, by its tag (run by hand)
 │   └── checks.yml                 luacheck on every push
+├── .github/scripts/
+│   └── announce-discord.sh        The Discord post: the version's changelog section, linked to CurseForge and the GitHub release
 ├── .githooks/
 │   └── pre-push                   Refuses to push a release tag before its Checks passed
 ├── .vscode/

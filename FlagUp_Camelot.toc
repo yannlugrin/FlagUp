@@ -7,16 +7,18 @@
 ## Author: Mr Caillou
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\FlagUp\Media\Icon
-## OptionalDeps: EllesmereUI
 ## SavedVariables: FlagUpDB
+## OptionalDeps: EllesmereUI
 ## X-Website: https://github.com/yannlugrin/FlagUp
 ## X-Github: https://github.com/yannlugrin/FlagUp
 ## X-License: MIT
 ## X-Curse-Project-ID: 1758443
 
 Libs.xml
+
 Locales\enUS.lua
 Locales\frFR.lua
+
 Core\Core.lua
 Core\Store.lua
 Core\Characters.lua
@@ -24,6 +26,7 @@ Core\Categories.lua
 Core\Rules.lua
 Core\Ignored.lua
 Core\Mailing.lua
+
 UI\Skin.lua
 UI\TreeRow.lua
 UI\ItemDrop.lua

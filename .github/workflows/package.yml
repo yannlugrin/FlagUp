@@ -50,3 +50,8 @@ jobs:
           fi
           mv CHANGELOG-VERSION.md CHANGELOG.md
       - uses: BigWigsMods/packager@v2
+      # Announces the release on Discord, pre-releases too (see the script; "Announce on Discord" posts one again).
+      - name: Announce on Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: bash .github/scripts/announce-discord.sh "$GITHUB_REF_NAME"
