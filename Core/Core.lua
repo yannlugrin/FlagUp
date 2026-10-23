@@ -12,6 +12,7 @@ local addonName, ns = ...
 ---@field Characters FlagUp.Characters
 ---@field Categories FlagUp.Categories
 ---@field Rules FlagUp.Rules
+---@field Mailing FlagUp.Mailing
 ---@field Skin FlagUp.Skin
 ---@field TreeRow FlagUp.TreeRow
 ---@field ItemDrop FlagUp.ItemDrop
@@ -40,6 +41,7 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:RegisterEvent("MAIL_SHOW")
+frame:RegisterEvent("BAG_UPDATE_DELAYED")
 
 frame:SetScript("OnEvent", function(_, event, ...)
     local arg1 = ...
@@ -50,6 +52,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
         ns.Launcher.Register()
     elseif event == "MAIL_SHOW" then
         ns.MailPanel.Open()
+    elseif event == "BAG_UPDATE_DELAYED" then
+        ns.MailPanel.Refresh()
     end
 end)
 

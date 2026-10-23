@@ -376,11 +376,12 @@ local function ruleDetail(shown)
     return detail
 end
 
----Shows the rules in the tree again, and the selected line in the pane.
+---Shows the rules in the tree again, and the selected line in the pane; the mailbox panel, open, follows the rules.
 function RulesWindow.Refresh()
     window:ShowLines(rulesTreeLines())
     local shown = selectedID and shownLines[selectedID]
     window:ShowRule(shown and ruleDetail(shown) or nil)
+    ns.MailPanel.Refresh()
 end
 
 ---Selects a line, opening the lines above it, and scrolls the tree to it.

@@ -16,6 +16,7 @@ ns.MailPanel = MailPanel
 ---@field color ColorMixin the quality colour
 ---@field count integer how many are sent
 ---@field checked boolean unchecked: it stays in the bags this time
+---@field onToggle fun()? a click on its checkbox
 
 ---A recipient and the items it gets, ready to show.
 ---@class FlagUp.MailGroup
@@ -113,12 +114,16 @@ list.Empty:SetText(L["Nothing to send."])
 ---@field Icon Texture
 ---@field Name FontString
 ---@field Count FontString
+---@field item FlagUp.MailItem the item shown
 
 ---@param row FlagUp.MailItemRow
 local function createItemRow(row)
     row.Checkbox = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
     row.Checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
     row.Checkbox:SetPoint("LEFT", 2, 0)
+    row.Checkbox:SetScript("OnClick", function()
+        if row.item.onToggle then row.item.onToggle() end
+    end)
 
     row.Icon = row:CreateTexture(nil, "ARTWORK")
     row.Icon:SetSize(ICON_SIZE, ICON_SIZE)
@@ -142,6 +147,7 @@ end
 ---@param item FlagUp.MailItem
 local function initItemRow(row, item)
     if not row.Name then createItemRow(row) end
+    row.item = item
 
     row.Checkbox:SetChecked(item.checked)
     row.Icon:SetTexture(item.icon)
@@ -335,8 +341,9 @@ function panel:ShowPreview(preview)
     list.ScrollBox:SetDataProvider(CreateDataProvider(elements), ScrollBoxConstants.RetainScrollPosition)
     list.Empty:SetShown(#elements == 0)
 
-    panel.Summary:SetText(L["%s · postage %s"]:format(mailCount(preview.mails), GetMoneyString(preview.postage)))
-    panel.SendButton:SetEnabled(#elements > 0)
+    -- The mail count, then the postage under it.
+    panel.Summary:SetText(mailCount(preview.mails) .. "\n" .. L["Postage: %s"]:format(GetMoneyString(preview.postage)))
+    panel.SendButton:SetEnabled(preview.mails > 0)
 end
 
 ---Shows the mails being sent, in sending order.
@@ -366,6 +373,57 @@ function panel:ShowSending(mails)
     panel.StopButton:SetEnabled(sent + failed < #mails)
 end
 
+-- The preview from the bags --------------------------------------------------------------------
+
+---@type table<integer, true> the items unchecked during this visit to the mailbox, by item ID
+local skipped = {}
+
+---What the bags would send, by recipient and item name; an unchecked item is listed but counts for no mail.
+---@return FlagUp.MailPreview
+local function mailPreview()
+    ---@type table<string, FlagUp.MailGroup>
+    local groupsByRecipient = {}
+    ---@type table<string, integer> by recipient: the attachments of its checked items
+    local attachments = {}
+
+    for _, shipment in ipairs(ns.Mailing.Shipments()) do
+        local recipient, itemID = shipment.recipient, shipment.itemID
+        local group = groupsByRecipient[recipient]
+        if not group then
+            group = { recipient = recipient, mails = 0, items = {} }
+            groupsByRecipient[recipient] = group
+            attachments[recipient] = 0
+        end
+
+        local checked = not skipped[itemID]
+        local quality = C_Item.GetItemQualityByID(itemID)
+        table.insert(group.items, {
+            name = C_Item.GetItemNameByID(itemID) or RETRIEVING_ITEM_INFO,
+            icon = C_Item.GetItemIconByID(itemID),
+            color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR,
+            count = shipment.count,
+            checked = checked,
+            onToggle = function()
+                skipped[itemID] = not skipped[itemID] or nil
+                MailPanel.Refresh()
+            end,
+        })
+        if checked then attachments[recipient] = attachments[recipient] + #shipment.attachments end
+    end
+
+    local preview = { groups = {}, mails = 0, postage = 0 }
+    for recipient, group in pairs(groupsByRecipient) do
+        local mails, postage = ns.Mailing.MailsFor(attachments[recipient])
+        group.mails = mails
+        table.sort(group.items, function(a, b) return a.name < b.name end)
+        preview.groups[#preview.groups + 1] = group
+        preview.mails = preview.mails + mails
+        preview.postage = preview.postage + postage
+    end
+    table.sort(preview.groups, function(a, b) return a.recipient < b.recipient end)
+    return preview
+end
+
 ---Shows the panel beside the open mailbox. Call on MAIL_SHOW.
 function MailPanel.Open()
     -- A child of the mailbox hides with it, however it is closed (Escape, walking away, its close button).
@@ -373,8 +431,14 @@ function MailPanel.Open()
     panel:ClearAllPoints()
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", MAILBOX_GAP, 0)
     panel:SetPoint("BOTTOMLEFT", MailFrame, "BOTTOMRIGHT", MAILBOX_GAP, 0)
-    panel:ShowPreview({ groups = {}, mails = 0, postage = 0 })
+    skipped = {}
+    panel:ShowPreview(mailPreview())
     panel:Show()
+end
+
+---Shows the preview again, while the panel is open. Call when the bags change.
+function MailPanel.Refresh()
+    if panel:IsShown() then panel:ShowPreview(mailPreview()) end
 end
 
 -- Skin -------------------------------------------------------------------------------------------

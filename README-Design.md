@@ -17,7 +17,7 @@ Mail only reaches a character of the same ruleset and faction, so Flag Up keeps 
 
 A known character that is renamed, which the game can force, keeps its rules and overrides: Flag Up recognises it at its next login.
 
-Mail never goes to the character being played. Bound items are never sent.
+Mail never goes to the character being played. Bound items, and items of an equipment set, are never sent.
 
 ### Rules
 

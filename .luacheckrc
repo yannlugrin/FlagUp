@@ -23,4 +23,5 @@ read_globals = {
     "C_Item", "Item", "RETRIEVING_ITEM_INFO", "WHITE_FONT_COLOR", "GetCursorInfo", "ClearCursor", "C_EventUtils",
     "ChatFrameUtil", "ChatEdit_InsertLink", "hooksecurefunc", "tContains",
     "CopyTable", "StaticPopup_Show", "OKAY", "strtrim",
+    "C_Container", "BACKPACK_CONTAINER", "NUM_BAG_SLOTS",
 }

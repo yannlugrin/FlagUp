@@ -25,7 +25,8 @@ FlagUp/
 │   ├── Store.lua                  The saved data (AceDB): defaults, ns.db, ns.data and ns.settings, set on ADDON_LOADED
 │   ├── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
 │   ├── Categories.lua             The game's item categories (classes and subclasses), as the client names them
-│   └── Rules.lua                  The rule lines of the ruleset and faction being played: categories, subcategories, items
+│   ├── Rules.lua                  The rule lines of the ruleset and faction being played: categories, subcategories, items
+│   └── Mailing.lua                What the bags hold that the rules send: amounts, the stacks to attach, mails and postage
 ├── Locales/
 │   ├── enUS.lua                   English texts (AceLocale default)
 │   └── frFR.lua                   French texts

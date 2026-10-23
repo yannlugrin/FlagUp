@@ -36,7 +36,9 @@
         "ChatFrameUtil",
         "StaticPopupDialogs",
         "StaticPopup_Show",
-        "OKAY"
+        "OKAY",
+        "BACKPACK_CONTAINER",
+        "NUM_BAG_SLOTS"
     ],
     "Lua.type.weakUnionCheck": true
 }
