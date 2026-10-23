@@ -22,7 +22,8 @@ FlagUp/
 ├── .pkgmeta                       Package name; library externals; the developer READMEs and Media/Source stripped from the package
 ├── Core/
 │   ├── Core.lua                   The add-on's namespace: the translated texts (ns.L), chat printing, the events, the /flagup commands
-│   └── Store.lua                  The saved data (AceDB): defaults, ns.db and ns.settings, set on ADDON_LOADED
+│   ├── Store.lua                  The saved data (AceDB): defaults, ns.db, ns.data and ns.settings, set on ADDON_LOADED
+│   └── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
 ├── Locales/
 │   ├── enUS.lua                   English texts (AceLocale default)
 │   └── frFR.lua                   French texts
@@ -45,7 +46,7 @@ FlagUp/
 
 ## Saved Data
 
-> **Built: the settings. Proposal, not built yet: the rest.**
+> **Built: the settings, the known characters. Proposal, not built yet: the rest.**
 
 One account-wide SavedVariables table, `FlagUpDB`, kept by AceDB (`Core/Store.lua`): the data in `global`, the settings in one "Default" profile shared by every character. AceDB saves only the values that differ from their defaults. Mail only reaches a character of the same ruleset and faction, so characters and rules are kept apart by ruleset and faction (`"PvP-Alliance"`, `"Normal-Horde"`…). A character works on its own pair's entry: all its rules, with the overrides of all its characters. The settings are account-wide. Characters are named "First Surname", the name the game gives a character on WoW: Forever, unique within a ruleset.
 

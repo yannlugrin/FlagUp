@@ -19,6 +19,7 @@ Locales\enUS.lua
 Locales\frFR.lua
 Core\Core.lua
 Core\Store.lua
+Core\Characters.lua
 UI\Skin.lua
 UI\TreeRow.lua
 UI\RulesWindow.lua

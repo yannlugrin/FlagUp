@@ -6,8 +6,10 @@ local addonName, ns = ...
 ---@field L table<string, string>
 ---@field Print fun(msg: string)
 ---@field db table AceDB object
+---@field data FlagUp.Data
 ---@field settings FlagUp.Settings
 ---@field Store FlagUp.Store
+---@field Characters FlagUp.Characters
 ---@field Skin FlagUp.Skin
 ---@field TreeRow FlagUp.TreeRow
 ---@field RulesWindow FlagUp.RulesWindow
@@ -40,6 +42,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" and arg1 == addonName then
         ns.Store.Init()
     elseif event == "PLAYER_LOGIN" then
+        ns.Characters.RecordPlayer()
         ns.Launcher.Register()
     elseif event == "MAIL_SHOW" then
         ns.MailPanel.Open()
