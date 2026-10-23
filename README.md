@@ -15,7 +15,7 @@ For **World of Warcraft: Forever**. Source code, issues and releases: [github.co
 - **Any alt.** Pick from the characters you logged in with Flag Up, or type the name of an alt on another account.
 - **At the mailbox.** A panel next to the mailbox lists what will be sent, alt by alt, with the postage; uncheck an item to keep it this time. Then it sends mail after mail and shows each one sent, or failed with the game's reason.
 - **Automatic or on demand.** Send as soon as the mailbox opens, or only when you click Send. A key you choose (Shift by default) does the opposite while you hold it, like the game's auto-loot key.
-- *Coming:* **Ignore an item.** From the mailbox panel, stop offering an item, for all your characters or only the one you play; the ignored items have their own tab, where you can take them back.
+- **Ignore an item.** From the mailbox panel, stop offering an item, for all your characters or only the one you play. The rules window shows it ignored, and its Ignored tab lists every ignored item by category, to take one back.
 
 Show or hide the rules window with the minimap button or `/flagup open`. Right-click the button for a menu. The add-on compartment next to the minimap opens the settings.
 
