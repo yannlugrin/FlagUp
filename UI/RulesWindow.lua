@@ -63,6 +63,11 @@ window.TitleContainer:SetScript("OnDragStart", function() window:StartMoving() e
 window.TitleContainer:SetScript("OnDragStop", function() window:StopMovingOrSizing() end)
 RulesWindow.Window = window
 
+---Shows the rules window, or hides it when it is shown.
+function RulesWindow.Toggle()
+    window:SetShown(not window:IsShown())
+end
+
 -- The tree and the right pane lay out their own insets.
 window.Inset:Hide()
 

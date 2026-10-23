@@ -21,7 +21,7 @@ FlagUp/
 ├── .luacheckrc                    Lint config, skips Libs/
 ├── .pkgmeta                       Package name; library externals; the developer READMEs and Media/Source stripped from the package
 ├── Core/
-│   ├── Core.lua                   The add-on's namespace: the translated texts (ns.L), the load event
+│   ├── Core.lua                   The add-on's namespace: the translated texts (ns.L), chat printing, the events, the /flagup commands
 │   └── Store.lua                  The saved data (AceDB): defaults, ns.db and ns.settings, set on ADDON_LOADED
 ├── Locales/
 │   ├── enUS.lua                   English texts (AceLocale default)

@@ -107,7 +107,7 @@ Opens on **Remove rule**, always, and when the last checked field of the line is
 ## Commands
 
 - `/flagup`: lists the commands.
-- `/flagup open`: opens the rules window.
+- `/flagup open`: shows or hides the rules window.
 - `/flagup settings`: opens frame 5.
 
 ## Open Questions

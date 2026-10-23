@@ -16,14 +16,14 @@ For **World of Warcraft: Forever**. Source code, issues and releases: [github.co
 - *Coming:* **At the mailbox.** A panel next to the mailbox lists what will be sent, alt by alt, with the postage; uncheck an item to keep it this time. Then it sends mail after mail and shows each one sent, or failed with the game's reason.
 - *Coming:* **Automatic or on demand.** Send as soon as the mailbox opens, or only when you click Send. A key you choose (Shift by default) does the opposite while you hold it, like the game's auto-loot key.
 
-Show or hide the rules window with the minimap button, or open it with `/flagup open`. Right-click the button for a menu. The add-on compartment next to the minimap opens the settings.
+Show or hide the rules window with the minimap button or `/flagup open`. Right-click the button for a menu. The add-on compartment next to the minimap opens the settings.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `/flagup` | List the commands |
-| `/flagup open` | Open the rules window |
+| `/flagup open` | Show or hide the rules window |
 | `/flagup settings` | Open the Flag Up settings |
 
 ## Looks

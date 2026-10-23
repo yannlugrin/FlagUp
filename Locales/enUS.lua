@@ -18,6 +18,7 @@ L["Category or item"] = true
 L["Character overrides"] = true
 L["Click: open the settings"] = true
 L["Click: show or hide the rules window"] = true
+L["Commands: /flagup open (the rules window), /flagup settings"] = true
 L["Drop an item anywhere on this window to add it under its category."] = true
 L["Failed"] = true
 L["Flag Up in the add-on compartment next to the minimap: click to open these settings."] = true

@@ -29,8 +29,7 @@ local dataObject = LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
             return
         end
         if button ~= "RightButton" then
-            local window = ns.RulesWindow.Window
-            window:SetShown(not window:IsShown())
+            ns.RulesWindow.Toggle()
             return
         end
         -- Not owned by the clicked button: a menu closes with its owner, and EllesmereUI's minimap button bar hides

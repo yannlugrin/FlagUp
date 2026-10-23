@@ -8,7 +8,7 @@ ignore = {
 }
 
 globals = {
-    "UISpecialFrames",
+    "UISpecialFrames", "SlashCmdList", "SLASH_FLAGUP1",
 }
 
 read_globals = {
