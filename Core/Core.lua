@@ -18,6 +18,7 @@ local addonName, ns = ...
 ---@field RulesWindow FlagUp.RulesWindow
 ---@field AddItemDialog FlagUp.AddItemDialog
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog
+---@field CharacterNameDialog FlagUp.CharacterNameDialog
 ---@field SettingsPanel FlagUp.SettingsPanel
 ---@field Launcher FlagUp.Launcher
 ---@field MailPanel FlagUp.MailPanel

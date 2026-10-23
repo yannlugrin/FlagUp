@@ -40,6 +40,7 @@ FlagUp/
 │   ├── RulesWindow.lua            The rules window: frame, toolbar, tree (ShowLines), right pane (ShowRule)
 │   ├── AddItemDialog.lua          The Add item dialog: item ID or link field, Add, the error line (ShowError)
 │   ├── AddCategoryDialog.lua      The Add category dialog: filter, the game's categories (ShowLines), Cancel, Add
+│   ├── CharacterNameDialog.lua    The dialog to type a character's name, from the Rule dropdown's Other character…
 │   ├── Settings.lua               The settings in the game's Options › AddOns: the game's settings list, bound to ns.settings
 │   ├── Launcher.lua               The minimap button and the add-on compartment entry (LibDBIcon), registered on PLAYER_LOGIN
 │   └── MailPanel.lua              The panel beside the mailbox, open with it: items by recipient (ShowPreview), mails, postage, Send
@@ -49,7 +50,7 @@ FlagUp/
 
 ## Saved Data
 
-> **Built: the settings, the known characters, adding rule lines and resolving their fields (no field set yet). Proposal, not built yet: the rest.**
+> **Built: the settings, the known characters, the rule lines (adding, resolving, editing). Proposal, not built yet: the rest.**
 
 One account-wide SavedVariables table, `FlagUpDB`, kept by AceDB (`Core/Store.lua`): the data in `global`, the settings in one "Default" profile shared by every character. AceDB saves only the values that differ from their defaults. Mail only reaches a character of the same ruleset and faction, so characters and rules are kept apart by ruleset and faction (`"PvP-Alliance"`, `"Normal-Horde"`…). A character works on its own pair's entry: all its rules, with the overrides of all its characters. The settings are account-wide. Characters are named "First Surname", the name the game gives a character on WoW: Forever, unique within a ruleset.
 

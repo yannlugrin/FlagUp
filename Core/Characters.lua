@@ -76,3 +76,23 @@ function Characters.KnownNames()
     table.sort(names)
     return names
 end
+
+---Adds a character typed by the player, of the ruleset and faction being played; a character already there stays as
+---it is.
+---@param name string "First Surname"
+function Characters.AddTyped(name)
+    local characters = Characters.PlayerRulesetFaction().characters
+    if not characters[name] then characters[name] = { typed = true } end
+end
+
+---The names of the characters of the ruleset and faction being played, known and typed, by name.
+---@param except string? a character left out
+---@return string[]
+function Characters.Names(except)
+    local names = {}
+    for name in pairs(Characters.PlayerRulesetFaction().characters) do
+        if name ~= except then names[#names + 1] = name end
+    end
+    table.sort(names)
+    return names
+end

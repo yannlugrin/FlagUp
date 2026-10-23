@@ -33,7 +33,10 @@
         "GameTooltip_Hide",
         "RETRIEVING_ITEM_INFO",
         "ChatEdit_InsertLink",
-        "ChatFrameUtil"
+        "ChatFrameUtil",
+        "StaticPopupDialogs",
+        "StaticPopup_Show",
+        "OKAY"
     ],
     "Lua.type.weakUnionCheck": true
 }

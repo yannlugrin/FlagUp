@@ -28,6 +28,7 @@ UI\ItemDrop.lua
 UI\RulesWindow.lua
 UI\AddItemDialog.lua
 UI\AddCategoryDialog.lua
+UI\CharacterNameDialog.lua
 UI\Settings.lua
 UI\Launcher.lua
 UI\MailPanel.lua

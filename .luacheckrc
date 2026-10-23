@@ -8,7 +8,7 @@ ignore = {
 }
 
 globals = {
-    "UISpecialFrames", "SlashCmdList", "SLASH_FLAGUP1",
+    "UISpecialFrames", "SlashCmdList", "SLASH_FLAGUP1", "StaticPopupDialogs",
 }
 
 read_globals = {
@@ -22,4 +22,5 @@ read_globals = {
     "C_GameRules", "UnitFullName", "UnitFactionGroup", "UnitGUID",
     "C_Item", "Item", "RETRIEVING_ITEM_INFO", "WHITE_FONT_COLOR", "GetCursorInfo", "ClearCursor", "C_EventUtils",
     "ChatFrameUtil", "ChatEdit_InsertLink", "hooksecurefunc", "tContains",
+    "CopyTable", "StaticPopup_Show", "OKAY", "strtrim",
 }

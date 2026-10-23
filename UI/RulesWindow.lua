@@ -200,15 +200,6 @@ local function treeRuleText(place, character)
     return text
 end
 
----@param fields FlagUp.Line|table a line, or a character's override of it
----@return boolean
-local function setsAField(fields)
-    for _, field in ipairs(ns.Rules.FIELDS) do
-        if fields[field] ~= nil then return true end
-    end
-    return false
-end
-
 ---A tree line, selected with a click. A rule line shows what the character being played does with it; a plain
 ---heading, above lines without being one, shows no rule.
 ---@param kind "category"|"subcategory"|"item"
@@ -235,8 +226,8 @@ local function treeLine(kind, id, holdsLines, shown)
         local player = ns.Characters.PlayerName()
         local override = rule.overrides and rule.overrides[player]
         line.rule = treeRuleText(shown.place, player)
-        line.overridden = override ~= nil and setsAField(override)
-        line.inherited = not setsAField(rule) and not line.overridden
+        line.overridden = override ~= nil and ns.Rules.SetsAField(override)
+        line.inherited = not ns.Rules.SetsAField(rule) and not line.overridden
     end
     return line
 end
@@ -350,27 +341,29 @@ end
 ---@param shown FlagUp.ShownLine
 ---@return FlagUp.RuleDetail
 local function ruleDetail(shown)
-    local rule = ns.Rules.LineAt(shown.place) or {}
+    local line = ns.Rules.LineAt(shown.place)
+    local rule = line or {}
     local overrides = rule.overrides or {}
     local player = ns.Characters.PlayerName()
+    shownCharacter = shownCharacter or player
 
-    -- The tags: the character being played, then those that override the line, by name.
+    -- The tags: the character being played, then those that override the line and the one picked from +, by name.
     local characters = {}
     for name in pairs(overrides) do
         if name ~= player then characters[#characters + 1] = name end
     end
+    if shownCharacter ~= player and not overrides[shownCharacter] then characters[#characters + 1] = shownCharacter end
     table.sort(characters)
     table.insert(characters, 1, player)
 
     local addable = {}
     for _, name in ipairs(ns.Characters.KnownNames()) do
-        if name ~= player and not overrides[name] then addable[#addable + 1] = name end
+        if not tContains(characters, name) then addable[#addable + 1] = name end
     end
-
-    if not tContains(characters, shownCharacter) then shownCharacter = player end
 
     local detail = fieldsDetail(shown.place, rule, nil) --[[@as FlagUp.RuleDetail]]
     detail.name, detail.path, detail.color = shown.name, shown.path, shown.color
+    detail.isLine = line ~= nil
     local overridesDetail = fieldsDetail(shown.place, overrides[shownCharacter] or {}, shownCharacter)
     overridesDetail.characters = characters
     overridesDetail.selected = shownCharacter
@@ -488,6 +481,8 @@ end
 ---A dropdown with WowStyle1DropdownTemplate's text.
 ---@class FlagUp.Dropdown: DropdownButton
 ---@field OverrideText fun(self: FlagUp.Dropdown, text: string)
+---@field SetupMenu fun(self: FlagUp.Dropdown, generator: fun(owner: FlagUp.Dropdown, rootDescription: table))
+---@field GenerateMenu fun(self: FlagUp.Dropdown)
 
 ---The fields a line can have, with their controls.
 ---@class FlagUp.FieldSet
@@ -647,6 +642,7 @@ end
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
 ---@field stacks FlagUp.StacksFieldDetail
+---@field isLine boolean? false: a plain heading, with no rule to remove
 ---@field overrides FlagUp.OverridesDetail
 
 ---Shows a field as set or taken from above: a field taken from above has its controls greyed out and disabled.
@@ -666,6 +662,11 @@ end
 ---@param detail FlagUp.RuleDetail|FlagUp.OverridesDetail
 ---@return FlagUp.Field[] fields the shown fields, in order
 local function showFieldSet(set, detail)
+    -- The menus are built again: the client may keep the one built when the dropdown was first shown, for another
+    -- line or character.
+    set.RuleDropdown:GenerateMenu()
+    set.StacksDropdown:GenerateMenu()
+
     set.RuleDropdown:OverrideText(detail.rule.text)
     showField(set.RuleField, detail.rule, { set.RuleDropdown })
     local fields = { set.RuleField }
@@ -725,6 +726,7 @@ function window:ShowRule(detail)
     local last = stackFields(pane.Path, showFieldSet(pane.Shared, detail))
     pane.RemoveRuleButton:ClearAllPoints()
     pane.RemoveRuleButton:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    pane.RemoveRuleButton:SetShown(detail.isLine ~= false)
 
     -- The tags: the selected character's stays highlighted.
     local overrides = detail.overrides
@@ -751,7 +753,7 @@ function window:ShowRule(detail)
     pane.AddOverrideButton:SetEnabled(#overrides.addable > 0)
     pane.AddOverrideButton:SetupMenu(function(_, rootDescription)
         for _, name in ipairs(overrides.addable) do
-            rootDescription:CreateButton(name, function() end)
+            rootDescription:CreateButton(name, function() overrides.onSelectCharacter(name) end)
         end
     end)
 
@@ -764,6 +766,180 @@ function window:ShowRule(detail)
     pane.RemoveOverrideButton:SetText(L["Remove %s's override"]:format(overrides.selected))
     pane.RemoveOverrideButton:SetWidth(math.max(BUTTON_WIDTH, pane.RemoveOverrideButton:GetTextWidth() + 24))
 end
+
+-- Editing the selected line ----------------------------------------------------------------------
+
+---@return FlagUp.LinePlace?
+local function selectedPlace()
+    local shown = selectedID and shownLines[selectedID]
+    return shown and shown.place
+end
+
+---The character a field set edits: the shown character in the overrides section; nil for the shared rule.
+---@param set FlagUp.FieldSet
+---@return string?
+local function editedCharacter(set)
+    if set == pane.Override then return shownCharacter end
+    return nil
+end
+
+---@param place FlagUp.LinePlace
+---@param field FlagUp.FieldName
+---@param value any
+---@param character string?
+local function setField(place, field, value, character)
+    ns.Rules.SetField(place, field, value, character)
+    RulesWindow.Refresh()
+end
+
+StaticPopupDialogs.FLAGUP_REMOVE_RULE = {
+    text = "%s",
+    button1 = L["Remove"],
+    button2 = CANCEL,
+    OnAccept = function(_, place)
+        ns.Rules.RemoveLine(place)
+        RulesWindow.Refresh()
+    end,
+    OnAlt = function(_, place)
+        ns.Rules.InheritAll(place)
+        RulesWindow.Refresh()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+---Asks whether to remove the selected line (frame 9): Remove, Inherit when characters override it, Cancel.
+---@param place FlagUp.LinePlace
+local function askToRemove(place)
+    local shown = shownLines[selectedID]
+    local overrides = (ns.Rules.LineAt(place) or {}).overrides
+    local names = {}
+    for name in pairs(overrides or {}) do names[#names + 1] = name end
+    table.sort(names)
+
+    local popup = StaticPopupDialogs.FLAGUP_REMOVE_RULE
+    local text
+    if #names > 0 then
+        popup.button3 = L["Inherit"]
+        text = L["Remove the rule for %s, with the overrides of %s? Inherit keeps the line and the overrides, every shared field inherited."]
+            :format(shown.name, table.concat(names, ", "))
+    else
+        popup.button3 = nil
+        text = L["Remove the rule for %s?"]:format(shown.name)
+    end
+    StaticPopup_Show("FLAGUP_REMOVE_RULE", text, nil, place)
+end
+
+-- A field's checkbox: checked, the line (or the character) sets the field to the value it was taking; unchecked, the
+-- field is inherited again. Unchecking the line's last shared field asks first, as Remove rule does.
+---@param set FlagUp.FieldSet
+---@param field FlagUp.FieldName
+---@param checkbox CheckButton
+local function wireFieldCheckbox(set, field, checkbox)
+    checkbox:SetScript("OnClick", function()
+        local place = selectedPlace()
+        if not place then return end
+        local character = editedCharacter(set)
+
+        if checkbox:GetChecked() then
+            local value = ns.Rules.Value(place, field, character)
+            if type(value) == "table" then value = CopyTable(value) end
+            setField(place, field, value, character)
+            return
+        end
+
+        local line = ns.Rules.LineAt(place) --[[@as FlagUp.Line]]
+        if not character then
+            local others = CopyTable(line)
+            others[field] = nil
+            if not ns.Rules.SetsAField(others) then
+                RulesWindow.Refresh()
+                askToRemove(place)
+                return
+            end
+        end
+        setField(place, field, nil, character)
+    end)
+end
+
+---@param set FlagUp.FieldSet
+local function wireFieldSet(set)
+    wireFieldCheckbox(set, "sendTo", set.RuleField.Checkbox)
+    wireFieldCheckbox(set, "qualities", set.QualitiesField.Checkbox)
+    wireFieldCheckbox(set, "keep", set.KeepField.Checkbox)
+    wireFieldCheckbox(set, "fullStacksOnly", set.StacksField.Checkbox)
+
+    -- The rule: Don't send, the characters (the edited one left out: mail never goes to itself), then a typed name.
+    set.RuleDropdown:SetupMenu(function(_, root)
+        local place = selectedPlace()
+        if not place then return end
+        local character = editedCharacter(set)
+        local current = ns.Rules.Value(place, "sendTo", character)
+        local function isCurrent(value) return current == value end
+        local function choose(value) setField(place, "sendTo", value, character) end
+
+        root:CreateRadio(L["Don't send"], isCurrent, choose, false)
+        for _, name in ipairs(ns.Characters.Names(character)) do
+            root:CreateRadio(name, isCurrent, choose, name)
+        end
+        root:CreateButton(L["Other character…"], function()
+            ns.CharacterNameDialog.Open(character, function(name)
+                ns.Characters.AddTyped(name)
+                choose(name)
+            end)
+        end)
+    end)
+
+    set.StacksDropdown:SetupMenu(function(_, root)
+        local place = selectedPlace()
+        if not place then return end
+        local character = editedCharacter(set)
+        local current = ns.Rules.Value(place, "fullStacksOnly", character)
+        local function isCurrent(value) return current == value end
+        local function choose(value) setField(place, "fullStacksOnly", value, character) end
+        root:CreateRadio(L["Full stacks only"], isCurrent, choose, true)
+        root:CreateRadio(L["Any amount"], isCurrent, choose, false)
+    end)
+
+    for quality, checkbox in pairs(set.QualityCheckboxes) do
+        checkbox:SetScript("OnClick", function()
+            local place = selectedPlace()
+            if not place then return end
+            local character = editedCharacter(set)
+            local qualities = CopyTable(ns.Rules.Value(place, "qualities", character))
+            qualities[quality] = checkbox:GetChecked() or nil
+            setField(place, "qualities", qualities, character)
+        end)
+    end
+
+    -- The keep count is saved with Enter, or on leaving the box.
+    local function saveKeep()
+        local place = selectedPlace()
+        if not place then return end
+        local character = editedCharacter(set)
+        local count = tonumber(set.KeepInput:GetText()) or 0
+        if count ~= ns.Rules.Value(place, "keep", character) then setField(place, "keep", count, character) end
+    end
+    set.KeepInput:SetScript("OnEnterPressed", function() set.KeepInput:ClearFocus() end)
+    set.KeepInput:SetScript("OnEditFocusLost", saveKeep)
+end
+
+wireFieldSet(pane.Shared)
+wireFieldSet(pane.Override)
+
+pane.RemoveRuleButton:SetScript("OnClick", function()
+    local place = selectedPlace()
+    if place then askToRemove(place) end
+end)
+
+pane.RemoveOverrideButton:SetScript("OnClick", function()
+    local place = selectedPlace()
+    if not place then return end
+    ns.Rules.RemoveOverride(place, shownCharacter)
+    shownCharacter = nil
+    RulesWindow.Refresh()
+end)
 
 -- Skin -------------------------------------------------------------------------------------------
 

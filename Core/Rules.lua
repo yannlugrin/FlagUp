@@ -165,3 +165,76 @@ function Rules.RenameCharacter(oldName, newName)
     end
     for _, line in pairs(lines.items) do renameIn(line) end
 end
+
+-- Editing ----------------------------------------------------------------------------------------
+
+---Whether a line, or a character's override of it, sets any field.
+---@param fields FlagUp.Line|table
+---@return boolean
+function Rules.SetsAField(fields)
+    for _, field in ipairs(Rules.FIELDS) do
+        if fields[field] ~= nil then return true end
+    end
+    return false
+end
+
+---Sets a field on a line, for everyone or as a character's override; nil unsets it, inherited again. Setting a field
+---on a plain heading makes it a line; an override left with no field is removed.
+---@param place FlagUp.LinePlace
+---@param field FlagUp.FieldName
+---@param value any
+---@param character string? nil: the shared value
+function Rules.SetField(place, field, value, character)
+    if value == nil and not Rules.LineAt(place) then return end
+    if place.itemID then
+        Rules.AddItem(place.itemID)
+    else
+        Rules.AddCategory(place.classID, place.subClassID)
+    end
+    local line = Rules.LineAt(place) --[[@as FlagUp.Line]]
+
+    if not character then
+        line[field] = value
+        return
+    end
+    line.overrides = line.overrides or {}
+    local override = line.overrides[character] or {}
+    override[field] = value
+    line.overrides[character] = Rules.SetsAField(override) and override or nil
+    if not next(line.overrides) then line.overrides = nil end
+end
+
+---Removes a line and its overrides; the lines under it stay, and inherit from the line above it.
+---@param place FlagUp.LinePlace
+function Rules.RemoveLine(place)
+    local lines = Rules.Lines()
+    if place.itemID then
+        lines.items[place.itemID] = nil
+    elseif place.subClassID then
+        local subcategories = lines.subcategories[place.classID]
+        if subcategories then
+            subcategories[place.subClassID] = nil
+            if not next(subcategories) then lines.subcategories[place.classID] = nil end
+        end
+    else
+        lines.categories[place.classID] = nil
+    end
+end
+
+---Unsets every shared field of a line, which then inherits them; its overrides stay.
+---@param place FlagUp.LinePlace
+function Rules.InheritAll(place)
+    local line = Rules.LineAt(place)
+    if not line then return end
+    for _, field in ipairs(Rules.FIELDS) do line[field] = nil end
+end
+
+---Removes a character's override of a line.
+---@param place FlagUp.LinePlace
+---@param character string
+function Rules.RemoveOverride(place, character)
+    local line = Rules.LineAt(place)
+    if not (line and line.overrides) then return end
+    line.overrides[character] = nil
+    if not next(line.overrides) then line.overrides = nil end
+end

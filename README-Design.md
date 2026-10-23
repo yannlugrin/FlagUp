@@ -27,7 +27,7 @@ The rules are shared by the player's characters of one ruleset and faction; each
 
 Each line holds these fields:
 
-- **Rule**: one dropdown listing the recipients and *Don't send*. Choosing a recipient sends to it; choosing *Don't send* removes the recipient.
+- **Rule**: one dropdown listing *Don't send*, the recipients, then *Other character…*, which asks for a name to type. Choosing a recipient sends to it; choosing *Don't send* removes the recipient.
 - **Qualities** (on the equipment categories, Armor and Weapon, and their subcategories): the qualities it applies to, a multi-select (Poor, Common, Uncommon, Rare, Epic, Legendary). None selected means no filter: every quality.
 - **Keep** (on a specific item): how many stay in the bags; only the rest is sent.
 - **Stacks** (on every line): *Full stacks only* or *Any amount*. With *Full stacks only*, an item that stacks is sent only in full stacks: what the bags hold, after Keep, is counted as a whole, split or joined into as many full stacks as it makes, and the rest stays (45 herbs that stack by 20, keep 10: one stack of 20 sent, 25 stay). An item that doesn't stack is sent as usual.
