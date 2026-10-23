@@ -14,6 +14,7 @@ For **World of Warcraft: Forever**. Source code, issues and releases: [github.co
 - **Shared by your characters.** The rules are the same for all your characters of one ruleset and faction, the ones that can mail each other; a character can override a rule for itself: another recipient, don't send, another number to keep, other qualities, full stacks or not.
 - **Any alt.** Pick from the characters you logged in with Flag Up, or type the name of an alt on another account.
 - **At the mailbox.** A panel next to the mailbox lists what will be sent, alt by alt, with the postage; uncheck an item to keep it this time. Then it sends mail after mail and shows each one sent, or failed with the game's reason.
+- **Not worth the postage.** An item worth less to a vendor than its postage (30 copper a stack) starts unchecked, so you don't pay to mail it; check it to send it anyway. A setting turns this off, another one does the same for items no vendor buys.
 - **Automatic or on demand.** Send as soon as the mailbox opens, or only when you click Send. A key you choose (Shift by default) does the opposite while you hold it, like the game's auto-loot key.
 - **Ignore an item.** From the mailbox panel, stop offering an item, for all your characters or only the one you play. The rules window shows it ignored, and its Ignored tab lists every ignored item by category, to take one back.
 
