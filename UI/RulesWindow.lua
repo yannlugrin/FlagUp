@@ -169,6 +169,8 @@ end
 
 ---@type table<string, true> the lines closed this session, by ID
 local closed = {}
+---@type string the search box's text, lower case; "": no search
+local searchText = ""
 ---@type string? the selected line's ID
 local selectedID
 ---@type string? the character whose override the pane shows; nil: the one being played
@@ -213,7 +215,8 @@ end
 local function treeLine(kind, id, holdsLines, shown)
     shownLines[id] = shown
     local line = { kind = kind, id = id, name = shown.name, selected = id == selectedID }
-    if holdsLines then line.collapsed = closed[id] == true end
+    -- While searching, every line shows open.
+    if holdsLines then line.collapsed = searchText == "" and closed[id] == true end
     line.onToggle = function()
         closed[id] = not closed[id] or nil
         RulesWindow.Refresh()
@@ -310,39 +313,59 @@ local function rulesTreeLines()
         line.onIgnored = function() RulesWindow.ShowIgnored(classID, subClassID) end
     end
 
+    -- While searching: the lines whose name holds the text, with the lines above them, all open; a category or
+    -- subcategory found keeps every line under it.
+    ---@param name string
+    ---@return boolean
+    local function found(name)
+        return searchText == "" or name:lower():find(searchText, 1, true) ~= nil
+    end
+
     local lines = {}
     for _, category in ipairs(ns.Categories.All()) do
         local classID = category.classID
         local subcategoryRules = rules.subcategories[classID] or {}
         local classItemLines = itemLines[classID] or {}
+        local categoryFound = found(category.name)
 
-        ---@type FlagUp.Subcategory[]
+        -- The subcategories shown, each with its items shown.
+        ---@type { subcategory: FlagUp.Subcategory, items: FlagUp.TreeLine[]?, holdsItems: boolean }[]
         local shownSubcategories = {}
         for _, subcategory in ipairs(category.subcategories) do
-            if subcategoryRules[subcategory.subClassID] or classItemLines[subcategory.subClassID] then
-                shownSubcategories[#shownSubcategories + 1] = subcategory
+            local subItemLines = classItemLines[subcategory.subClassID]
+            if subcategoryRules[subcategory.subClassID] or subItemLines then
+                local subcategoryFound = categoryFound or found(subcategory.name)
+                local items = {}
+                for _, itemLine in ipairs(subItemLines or {}) do
+                    if subcategoryFound or found(itemLine.name) then items[#items + 1] = itemLine end
+                end
+                if subcategoryFound or #items > 0 then
+                    shownSubcategories[#shownSubcategories + 1] = {
+                        subcategory = subcategory, items = items, holdsItems = subItemLines ~= nil,
+                    }
+                end
             end
         end
 
-        if rules.categories[classID] or #shownSubcategories > 0 then
+        if (rules.categories[classID] and categoryFound) or #shownSubcategories > 0 then
             local id = categoryLineID(classID)
             local categoryLine = treeLine("category", id, #shownSubcategories > 0,
                 { place = { classID = classID }, name = category.name, path = category.name })
             markIgnored(categoryLine, classID, nil)
             lines[#lines + 1] = categoryLine
-            if not closed[id] then
-                for _, subcategory in ipairs(shownSubcategories) do
+            if searchText ~= "" or not closed[id] then
+                for _, shown in ipairs(shownSubcategories) do
+                    local subcategory = shown.subcategory
                     local subID = categoryLineID(classID, subcategory.subClassID)
-                    local subItemLines = classItemLines[subcategory.subClassID]
-                    local subcategoryLine = treeLine("subcategory", subID, subItemLines ~= nil, {
+                    local subcategoryLine = treeLine("subcategory", subID, shown.holdsItems, {
                         place = { classID = classID, subClassID = subcategory.subClassID }, name = subcategory.name,
                         path = category.name .. PATH_SEPARATOR .. subcategory.name,
                     })
                     markIgnored(subcategoryLine, classID, subcategory.subClassID)
                     lines[#lines + 1] = subcategoryLine
-                    if subItemLines and not closed[subID] then
-                        table.sort(subItemLines, function(a, b) return a.name < b.name end)
-                        for _, itemLine in ipairs(subItemLines) do
+                    if searchText ~= "" or not closed[subID] then
+                        table.sort(shown.items, function(a, b) return a.name < b.name end)
+                        for _, itemLine in ipairs(shown.items) do
                             -- An ignored item's glyph opens the Ignored tab on its subcategory.
                             if ignoredItems[shownLines[itemLine.id].place.itemID] then
                                 markIgnored(itemLine, classID, subcategory.subClassID)
@@ -464,6 +487,12 @@ function RulesWindow.SelectItem(itemID)
 end
 
 window:HookScript("OnShow", RulesWindow.Refresh)
+
+-- The search box filters the tree as it is typed in.
+window.SearchBox:HookScript("OnTextChanged", function(box)
+    searchText = box:GetText():lower()
+    RulesWindow.Refresh()
+end)
 
 -- Dropping an item -------------------------------------------------------------------------------
 

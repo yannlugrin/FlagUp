@@ -6,7 +6,7 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 
 ### Added
 
-- Rules window: choose what goes where by the game's item categories and subcategories, or item by item; add a category from the game's list, an item by its ID, its link or by dropping it on the window.
+- Rules window: choose what goes where by the game's item categories and subcategories, or item by item; add a category from the game's list, an item by its ID, its link or by dropping it on the window; a search box filters the tree by name.
 - Keep a number of an item in your bags, and send only full stacks of what stacks.
 - Rules shared by your characters of one ruleset and faction; a character can override any field for itself. A renamed character keeps its rules.
 - Recipients: the characters that logged in with Flag Up, or a name you type for an alt on another account.
