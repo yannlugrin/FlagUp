@@ -25,4 +25,5 @@ read_globals = {
     "CopyTable", "StaticPopup_Show", "OKAY", "strtrim",
     "C_Container", "BACKPACK_CONTAINER", "NUM_BAG_SLOTS", "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "ClearSendMail", "ClickSendMailItemButton", "SendMail",
     "CursorHasItem", "C_Timer", "BACK", "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown",
+    "PanelTemplates_TabResize", "PanelTemplates_SetNumTabs", "PanelTemplates_SetTab",
 }

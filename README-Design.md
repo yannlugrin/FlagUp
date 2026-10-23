@@ -44,7 +44,7 @@ A rule never makes a character mail itself: for the character a rule sends to, t
 
 ### Ignored items
 
-An ignored item is never offered at the mailbox, whatever the rules say: it is not a rule, it means "don't show me this any more". An item is ignored by every character of the ruleset and faction, or by one character only. Only items are ignored; a whole category is a *Don't send* rule. An ignored item keeps its rule line, if it has one; the line says it is ignored. In the tree, its Rule column reads *Ignored* for the character being played. In the pane, an item ignored by every character shows only *Ignored by every character*, **Stop ignoring** and **Remove rule**, in place of its fields and overrides; an item ignored by one character shows that notice and **Stop ignoring** in place of the character's override, and that character has a tag. Dropping an ignored item on the rules window adds its line, shown ignored.
+An ignored item is never offered at the mailbox, whatever the rules say: it is not a rule, it means "don't show me this any more". An item is ignored by every character of the ruleset and faction, or by one character only. Ignored by every character, it is no longer ignored by each one apart: taking it back makes it offered to all. Only items are ignored; a whole category is a *Don't send* rule. An ignored item keeps its rule line, if it has one; the line says it is ignored. In the tree, its Rule column reads *Ignored* for the character being played. In the pane, an item ignored by every character shows only *Ignored by every character*, **Stop ignoring** and **Remove rule**, in place of its fields and overrides; an item ignored by one character shows that notice and **Stop ignoring** in place of the character's override, and that character has a tag. Dropping an ignored item on the rules window adds its line, shown ignored.
 
 ## Design Constraints
 
@@ -56,7 +56,7 @@ An ignored item is never offered at the mailbox, whatever the rules say: it is n
 
 ### 1. Rules Window
 
-A movable window with the add-on's portrait and a close button.
+A movable window with the add-on's portrait and a close button, and the game's tabs under it: **Rules** (this frame) and **Ignored** (frame 10).
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
 - **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*. *Rule* shows what the character being played will do with the line: the recipient's name or *Don't send*, then ", full stacks" when only full stacks are sent, then ", keep 20" when some are kept (Lyra Moonfield, full stacks, keep 20); it is greyed out when the line inherits all its fields. When that character overrides the line, *Rule* shows its override and a small glyph follows the line's name; who else overrides it is in the pane's overrides section (frame 2). A plain heading can be selected too: the pane shows what it inherits, every field unchecked. Categories collapse with the game's +/− buttons. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
@@ -113,6 +113,13 @@ Opens on **Remove rule**. Its buttons depend on the line:
 - **Remove**: the line and its overrides. The lines under it stay and inherit from the line above it.
 - **Inherit**, only when characters override the line (the text names them): every field of the line is unchecked and inherited; the line stays with its overrides as they are.
 - **Cancel**: nothing changes.
+
+### 10. Rules Window — Ignored Tab
+
+The items ignored in the ruleset and faction being played, by every character or by one.
+
+- A dropdown filters the list: *All categories*, then the categories and subcategories that hold ignored items.
+- Columns *Item* (icon and name in its quality colour) and *Ignored by* (*All characters*, or the character's name); an item ignored by every character and by a character has a row for each. A red cross (the game's ready check cross) at the end of the row takes the item back.
 
 ## Commands
 

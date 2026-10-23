@@ -18,6 +18,7 @@ local addonName, ns = ...
 ---@field TreeRow FlagUp.TreeRow
 ---@field ItemDrop FlagUp.ItemDrop
 ---@field RulesWindow FlagUp.RulesWindow
+---@field IgnoredList FlagUp.IgnoredList
 ---@field AddItemDialog FlagUp.AddItemDialog
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog
 ---@field CharacterNameDialog FlagUp.CharacterNameDialog

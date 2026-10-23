@@ -39,7 +39,8 @@ FlagUp/
 │   ├── Skin.lua                   Bridge to EllesmereUI's skinning functions, applied once it hands them over
 │   ├── TreeRow.lua                The category tree rows, shared by the rules tree and the Add category dialog
 │   ├── ItemDrop.lua               Items dropped anywhere on a frame: the rules window and the Add item dialog
-│   ├── RulesWindow.lua            The rules window: frame, toolbar, tree (ShowLines), right pane (ShowRule)
+│   ├── RulesWindow.lua            The rules window: frame, toolbar, tree (ShowLines), right pane (ShowRule), tabs
+│   ├── IgnoredList.lua            The rules window's Ignored tab: the ignored items, filtered by category, to take back
 │   ├── AddItemDialog.lua          The Add item dialog: item ID or link field, Add, the error line (ShowError)
 │   ├── AddCategoryDialog.lua      The Add category dialog: filter, the game's categories (ShowLines), Cancel, Add
 │   ├── CharacterNameDialog.lua    The dialog to type a character's name, from the Rule dropdown's Other character…

@@ -390,11 +390,13 @@ local function ruleDetail(shown)
     return detail
 end
 
----Shows the rules in the tree again, and the selected line in the pane; the mailbox panel, open, follows the rules.
+---Shows the rules in the tree again, the selected line in the pane and the ignored items; the mailbox panel, open,
+---follows the rules.
 function RulesWindow.Refresh()
     window:ShowLines(rulesTreeLines())
     local shown = selectedID and shownLines[selectedID]
     window:ShowRule(shown and ruleDetail(shown) or nil)
+    ns.IgnoredList.Refresh()
     ns.MailPanel.Refresh()
 end
 
@@ -1054,6 +1056,21 @@ pane.RemoveRuleButton:SetScript("OnClick", function()
     if place then askToRemove(place) end
 end)
 
+-- Stop ignoring: by every character, or by the character shown.
+pane.StopIgnoringButton:SetScript("OnClick", function()
+    local place = selectedPlace()
+    if not (place and place.itemID) then return end
+    ns.Ignored.Remove(place.itemID)
+    RulesWindow.Refresh()
+end)
+
+pane.OverrideStopIgnoringButton:SetScript("OnClick", function()
+    local place = selectedPlace()
+    if not (place and place.itemID) then return end
+    ns.Ignored.Remove(place.itemID, shownCharacter)
+    RulesWindow.Refresh()
+end)
+
 pane.RemoveOverrideButton:SetScript("OnClick", function()
     local place = selectedPlace()
     if not place then return end
@@ -1061,6 +1078,45 @@ pane.RemoveOverrideButton:SetScript("OnClick", function()
     shownCharacter = nil
     RulesWindow.Refresh()
 end)
+
+-- Tabs -------------------------------------------------------------------------------------------
+
+-- The game's tabs under the window: the rules, and the ignored items. Named: the game's tab functions find a
+-- window's tabs by name.
+local RULES_TAB, IGNORED_TAB = 1, 2
+local TAB_LEFT, TAB_TOP, TAB_GAP = 11, 2, 3
+
+---@type Button[]
+window.Tabs = {}
+for index, title in ipairs({ L["Rules"], L["Ignored"] }) do
+    local tab = CreateFrame("Button", "FlagUpRulesWindowTab" .. index, window, "PanelTabButtonTemplate")
+    tab:SetID(index)
+    tab:SetText(title)
+    if index == 1 then
+        tab:SetPoint("TOPLEFT", window, "BOTTOMLEFT", TAB_LEFT, TAB_TOP)
+    else
+        tab:SetPoint("LEFT", window.Tabs[index - 1], "RIGHT", TAB_GAP, 0)
+    end
+    PanelTemplates_TabResize(tab, 0)
+    window.Tabs[index] = tab
+end
+PanelTemplates_SetNumTabs(window, #window.Tabs)
+
+---Shows a tab: the toolbar, the tree and the pane on the Rules tab; the list on the Ignored tab.
+---@param index integer
+local function showTab(index)
+    PanelTemplates_SetTab(window, index)
+    for _, region in ipairs({ window.SearchBox, window.AddItemButton, window.AddCategoryButton, tree, pane }) do
+        region:SetShown(index == RULES_TAB)
+    end
+    ns.IgnoredList.View:SetShown(index == IGNORED_TAB)
+end
+
+for _, tab in ipairs(window.Tabs) do
+    tab:SetScript("OnClick", function() showTab(tab:GetID()) end)
+end
+-- The window opens on the Rules tab; the Ignored list, loaded after this file, starts hidden.
+PanelTemplates_SetTab(window, RULES_TAB)
 
 -- Skin -------------------------------------------------------------------------------------------
 
@@ -1098,4 +1154,5 @@ ns.Skin.Apply(function(S)
     S.Button(pane.RemoveOverrideButton)
     S.Button(pane.StopIgnoringButton)
     S.Button(pane.OverrideStopIgnoringButton)
+    for _, tab in ipairs(window.Tabs) do S.Tab(tab) end
 end)

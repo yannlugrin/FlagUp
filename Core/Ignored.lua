@@ -56,17 +56,50 @@ function Ignored.CharactersIgnoring(itemID)
     return names
 end
 
----Ignores an item.
+---Ignores an item. Ignored by every character, it is no longer ignored by each one apart.
 ---@param itemID integer
 ---@param character string? nil: by every character
 function Ignored.Add(itemID, character)
     local items = ignoredItems()
     if not character then
         items.all[itemID] = true
+        for name in pairs(CopyTable(items.characters)) do Ignored.Remove(itemID, name) end
         return
     end
     items.characters[character] = items.characters[character] or {}
     items.characters[character][itemID] = true
+end
+
+---Takes an item back: it is offered again.
+---@param itemID integer
+---@param character string? nil: ignored by every character
+function Ignored.Remove(itemID, character)
+    local items = ignoredItems()
+    if not character then
+        items.all[itemID] = nil
+        return
+    end
+    local own = items.characters[character]
+    if not own then return end
+    own[itemID] = nil
+    if not next(own) then items.characters[character] = nil end
+end
+
+---An item ignored, by every character or by one.
+---@class FlagUp.IgnoredEntry
+---@field itemID integer
+---@field character string? nil: by every character
+
+---Every item ignored in the ruleset and faction being played, by every character and by each one.
+---@return FlagUp.IgnoredEntry[]
+function Ignored.Entries()
+    local items = ignoredItems()
+    local entries = {}
+    for itemID in pairs(items.all) do entries[#entries + 1] = { itemID = itemID } end
+    for character, own in pairs(items.characters) do
+        for itemID in pairs(own) do entries[#entries + 1] = { itemID = itemID, character = character } end
+    end
+    return entries
 end
 
 ---Gives a renamed character's ignored items its new name, joined to those already under it.
