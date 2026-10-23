@@ -831,8 +831,43 @@ local function askToRemove(place)
     StaticPopup_Show("FLAGUP_REMOVE_RULE", text, nil, place)
 end
 
+-- Unchecking a line's last shared field: Remove the line, or Keep the line with every field inherited (Escape too).
+StaticPopupDialogs.FLAGUP_UNCHECK_LAST_FIELD = {
+    text = "%s",
+    button1 = L["Remove the line"],
+    button2 = L["Keep the line"],
+    OnAccept = function(_, data)
+        ns.Rules.RemoveLine(data.place)
+        RulesWindow.Refresh()
+    end,
+    OnCancel = function(_, data)
+        ns.Rules.SetField(data.place, data.field, nil)
+        RulesWindow.Refresh()
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+---Asks what to do with the selected line once its last shared field is unchecked.
+---@param place FlagUp.LinePlace
+---@param field FlagUp.FieldName the field unchecked
+local function askAfterLastField(place, field)
+    local shown = shownLines[selectedID]
+    local names = {}
+    for name in pairs((ns.Rules.LineAt(place) or {}).overrides or {}) do names[#names + 1] = name end
+    table.sort(names)
+
+    local text = L["%s no longer sets a field of its own. Remove the line, or keep it with every field inherited?"]
+        :format(shown.name)
+    if #names > 0 then
+        text = text .. " " .. L["Removing it also removes the overrides of %s."]:format(table.concat(names, ", "))
+    end
+    StaticPopup_Show("FLAGUP_UNCHECK_LAST_FIELD", text, nil, { place = place, field = field })
+end
+
 -- A field's checkbox: checked, the line (or the character) sets the field to the value it was taking; unchecked, the
--- field is inherited again. Unchecking the line's last shared field asks first, as Remove rule does.
+-- field is inherited again. Unchecking the line's last shared field asks first whether to keep the line.
 ---@param set FlagUp.FieldSet
 ---@param field FlagUp.FieldName
 ---@param checkbox CheckButton
@@ -855,7 +890,7 @@ local function wireFieldCheckbox(set, field, checkbox)
             others[field] = nil
             if not ns.Rules.SetsAField(others) then
                 RulesWindow.Refresh()
-                askToRemove(place)
+                askAfterLastField(place, field)
                 return
             end
         end

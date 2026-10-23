@@ -56,7 +56,7 @@ A movable window with the add-on's portrait and a close button.
 
 - **Toolbar**: a search box, **Add item** (frame 3) and **Add category** (frame 4).
 - **Tree** (left): only the lines that were added, with the categories above them as plain headings. Columns: *Category or item*, *Rule*. *Rule* shows what the character being played will do with the line: the recipient's name or *Don't send*, then ", full stacks" when only full stacks are sent, then ", keep 20" when some are kept (Lyra Moonfield, full stacks, keep 20); it is greyed out when the line inherits all its fields. When that character overrides the line, *Rule* shows its override and a small glyph follows the line's name; who else overrides it is in the pane's overrides section (frame 2). A plain heading can be selected too: the pane shows what it inherits, every field unchecked. Categories collapse with the game's +/− buttons. The whole window accepts an item dropped on it: it is added under its category. A hint at the bottom of the tree says so.
-- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep** on an item, **Stacks** (one dropdown: *Full stacks only* and *Any amount*). Then **Remove rule** (frame 9). Unchecking the last checked field also opens frame 9. With no line selected, the pane shows only *Select a line in the tree.*
+- **Right pane**, top section: the selected line's name and path (Trade Goods › Herb), then its fields, each with its checkbox: **Rule** (one dropdown: the recipients and *Don't send*), **Qualities** on an equipment category or subcategory, **Keep** on an item, **Stacks** (one dropdown: *Full stacks only* and *Any amount*). Then **Remove rule** (frame 9). Unchecking the last checked field asks instead: **Remove the line**, or **Keep the line**, every field inherited (Escape keeps it too); the text names the characters whose overrides would go with it. With no line selected, the pane shows only *Select a line in the tree.*
 
 ### 2. Rules Window — Character Overrides Section
 
@@ -104,11 +104,11 @@ With automatic sending on (or the send key held while it is off), the panel open
 
 ### 9. Remove Rule (Dialog)
 
-Opens on **Remove rule**, always, and when the last checked field of the line is unchecked. Its buttons depend on the line:
+Opens on **Remove rule**. Its buttons depend on the line:
 
 - **Remove**: the line and its overrides. The lines under it stay and inherit from the line above it.
 - **Inherit**, only when characters override the line (the text names them): every field of the line is unchecked and inherited; the line stays with its overrides as they are.
-- **Cancel**: nothing changes; an unchecked field is checked again.
+- **Cancel**: nothing changes.
 
 ## Commands
 
