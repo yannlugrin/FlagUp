@@ -99,7 +99,7 @@ With automatic sending on (or the send key held while it is off), the panel open
 ### 8. Mailbox Side Panel — Sending
 
 - Each mail with its recipient and items, marked *Sent*, *Sending…*, *Waiting* or *Failed*. A failed mail shows the game's error in red under it, and sending goes on with the next mail.
-- At the bottom: how many are sent and failed, and **Stop**.
+- At the bottom: how many are sent and failed, and **Stop**; once the sending is over (finished or stopped), **Back** returns to the preview, with what is left in the bags.
 - Every mail's subject is "Flag Up parcel".
 
 ### 9. Remove Rule (Dialog)

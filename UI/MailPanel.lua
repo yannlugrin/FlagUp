@@ -41,7 +41,7 @@ ns.MailPanel = MailPanel
 ---@field recipient string
 ---@field part integer? with several mails to the recipient: which one this is
 ---@field parts integer? with several mails to the recipient: how many
----@field status "sent"|"sending"|"waiting"|"failed"
+---@field status "sent"|"sending"|"waiting"|"failed"|"stopped"
 ---@field attachments FlagUp.MailAttachment[]
 ---@field error string? on a failed mail: the game's error
 
@@ -198,9 +198,10 @@ panel.SendingList = sendingList
 ---@field Slots FlagUp.AttachmentSlot[]
 ---@field Error FontString
 
-local STATUS_TEXTS = { sent = L["Sent"], sending = L["Sending…"], waiting = L["Waiting"], failed = L["Failed"] }
+local STATUS_TEXTS = { sent = L["Sent"], sending = L["Sending…"], waiting = L["Waiting"], failed = L["Failed"],
+    stopped = L["Stopped"] }
 local STATUS_COLORS = { sent = GREEN_FONT_COLOR, sending = HIGHLIGHT_FONT_COLOR, waiting = GRAY_FONT_COLOR,
-    failed = RED_FONT_COLOR }
+    failed = RED_FONT_COLOR, stopped = GRAY_FONT_COLOR }
 
 ---@param slot FlagUp.AttachmentSlot
 local function showAttachmentTooltip(slot)
@@ -312,6 +313,13 @@ panel.StopButton:SetSize(math.max(BUTTON_WIDTH, panel.StopButton:GetTextWidth() 
 panel.StopButton:SetPoint("BOTTOMRIGHT", -PADDING, PADDING)
 panel.StopButton:Hide()
 
+-- Once the sending is over, back to the preview: what is left in the bags.
+panel.BackButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+panel.BackButton:SetText(BACK)
+panel.BackButton:SetSize(math.max(BUTTON_WIDTH, panel.BackButton:GetTextWidth() + 24), BUTTON_HEIGHT)
+panel.BackButton:SetPoint("BOTTOMRIGHT", -PADDING, PADDING)
+panel.BackButton:Hide()
+
 panel.Summary = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 panel.Summary:SetPoint("LEFT", panel, "BOTTOMLEFT", PADDING, PADDING + BUTTON_HEIGHT / 2)
 panel.Summary:SetPoint("RIGHT", panel.SendButton, "LEFT", -8, 0)
@@ -323,13 +331,18 @@ local function mailCount(mails)
     return mails == 1 and L["1 mail"] or L["%d mails"]:format(mails)
 end
 
+---@type boolean the panel shows the sending view; false: the preview
+local showingSending = false
+
 ---Shows what the mailbox would send.
 ---@param preview FlagUp.MailPreview
 function panel:ShowPreview(preview)
+    showingSending = false
     list:Show()
     sendingList:Hide()
     panel.SendButton:Show()
     panel.StopButton:Hide()
+    panel.BackButton:Hide()
 
     local elements = {}
     for _, group in ipairs(preview.groups) do
@@ -349,6 +362,7 @@ end
 ---Shows the mails being sent, in sending order.
 ---@param mails FlagUp.SendingMail[]
 function panel:ShowSending(mails)
+    showingSending = true
     list:Hide()
     sendingList:Show()
     panel.SendButton:Hide()
@@ -370,7 +384,13 @@ function panel:ShowSending(mails)
         panel.Summary:SetText(L["%d of %d sent"]:format(sent, #mails))
     end
     -- Once every mail is sent or failed, there is nothing left to stop.
-    panel.StopButton:SetEnabled(sent + failed < #mails)
+    -- Stop while mails are left; Back once the sending is over.
+    local left = false
+    for _, mail in ipairs(mails) do
+        if mail.status == "waiting" or mail.status == "sending" then left = true end
+    end
+    panel.StopButton:SetShown(left)
+    panel.BackButton:SetShown(not left)
 end
 
 -- The preview from the bags --------------------------------------------------------------------
@@ -424,6 +444,44 @@ local function mailPreview()
     return preview
 end
 
+-- Sending --------------------------------------------------------------------------------------------
+
+---The mails being sent, as the sending view shows them.
+---@param parcels FlagUp.Parcel[]
+---@return FlagUp.SendingMail[]
+local function sendingMails(parcels)
+    local mails = {}
+    for _, parcel in ipairs(parcels) do
+        local attachments = {}
+        for _, attachment in ipairs(parcel.attachments) do
+            attachments[#attachments + 1] = {
+                itemID = attachment.itemID, icon = C_Item.GetItemIconByID(attachment.itemID), count = attachment.count,
+            }
+        end
+        mails[#mails + 1] = {
+            recipient = parcel.recipient, part = parcel.part, parts = parcel.parts, status = parcel.status,
+            attachments = attachments, error = parcel.error,
+        }
+    end
+    return mails
+end
+
+-- Send: the checked items, mail by mail; the sending view follows each mail.
+panel.SendButton:SetScript("OnClick", function()
+    local shipments = {}
+    for _, shipment in ipairs(ns.Mailing.Shipments()) do
+        if not skipped[shipment.itemID] then shipments[#shipments + 1] = shipment end
+    end
+    table.sort(shipments, function(a, b) return a.itemID < b.itemID end)
+    local parcels = ns.Mailing.Parcels(shipments)
+    local function show() panel:ShowSending(sendingMails(parcels)) end
+    show()
+    ns.Mailing.Send(parcels, show)
+end)
+
+panel.StopButton:SetScript("OnClick", function() ns.Mailing.Stop() end)
+panel.BackButton:SetScript("OnClick", function() panel:ShowPreview(mailPreview()) end)
+
 ---Shows the panel beside the open mailbox. Call on MAIL_SHOW.
 function MailPanel.Open()
     -- A child of the mailbox hides with it, however it is closed (Escape, walking away, its close button).
@@ -438,7 +496,7 @@ end
 
 ---Shows the preview again, while the panel is open. Call when the bags change.
 function MailPanel.Refresh()
-    if panel:IsShown() then panel:ShowPreview(mailPreview()) end
+    if panel:IsShown() and not showingSending then panel:ShowPreview(mailPreview()) end
 end
 
 -- Skin -------------------------------------------------------------------------------------------
@@ -452,4 +510,5 @@ ns.Skin.Apply(function(S)
     end
     S.Button(panel.SendButton)
     S.Button(panel.StopButton)
+    S.Button(panel.BackButton)
 end)
