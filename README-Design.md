@@ -15,6 +15,8 @@ A recipient is one of the player's characters:
 
 Mail only reaches a character of the same ruleset and faction, so Flag Up keeps the characters and rules of each ruleset and faction apart (PvP Alliance, PvP Horde, Normal Horde…). The character being played sees all the rules of its ruleset and faction, with the overrides of every character of it, not only its own; it never sees another ruleset or faction. A typed character belongs to the ruleset and faction of the character that typed it.
 
+A known character that is renamed, which the game can force, keeps its rules and overrides: Flag Up recognises it at its next login.
+
 Mail never goes to the character being played. Bound items are never sent.
 
 ### Rules

@@ -59,7 +59,7 @@ FlagUpDB = {
         rulesetFactions = {
             ["PvP-Alliance"] = {
                 characters = {            -- recipients, by name
-                    ["Lyra Moonfield"] = { typed = false },   -- known: logged in with Flag Up
+                    ["Lyra Moonfield"] = { typed = false, guid = "Player-4613-00D061FC" },  -- known: logged in with Flag Up
                     ["Kael Duskwhisper"] = { typed = true },  -- typed by the player
                 },
                 rules = {
@@ -91,6 +91,7 @@ FlagUpDB = {
 
 - **A ruleset-faction pair** gets its entry when its first character logs in; it starts with no rules.
 - **A typed character** joins the pair of the character that typed it.
+- **A renamed character** (the game can force a rename): a known character saves its GUID, which a rename doesn't change. At login, a GUID saved under another name moves that character to its new name, with the rules that send to it and its overrides; where it already had overrides under the new name, the old name's fields win.
 - **A line** is one entry in `rules`, added by the player; it stays until removed. A field the line doesn't set is `nil`: it is inherited from the line above (item → subcategory → category), and above the categories from the defaults (*Don't send*, no quality filter, nothing kept, any amount). A new line sets no field.
 - **`sendTo`**: the recipient's name, or `false` for *Don't send*.
 - **`qualities`** (Armor and Weapon categories and subcategories): the selected qualities; an empty table means none selected, no filter.

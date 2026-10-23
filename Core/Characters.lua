@@ -9,6 +9,7 @@ ns.Characters = Characters
 ---A character the player can mail.
 ---@class FlagUp.Character
 ---@field typed boolean typed by the player; false: it logged in with Flag Up
+---@field guid string? the character's GUID, saved when it logs in: it stays the same when the character is renamed
 
 ---The characters and rules of one ruleset and faction: mail only reaches a character of both.
 ---@class FlagUp.RulesetFaction
@@ -47,9 +48,22 @@ function Characters.PlayerRulesetFaction()
 end
 
 ---Adds the character being played to the known characters of its ruleset and faction. A character typed before
----becomes known. Call on PLAYER_LOGIN.
+---becomes known. A character known under another name was renamed (the game can force it): its rules and overrides
+---move to the new name. Call on PLAYER_LOGIN.
 function Characters.RecordPlayer()
-    Characters.PlayerRulesetFaction().characters[Characters.PlayerName()] = { typed = false }
+    local characters = Characters.PlayerRulesetFaction().characters
+    local name, guid = Characters.PlayerName(), UnitGUID("player")
+
+    local oldNames = {}
+    for knownName, character in pairs(characters) do
+        if character.guid == guid and knownName ~= name then oldNames[#oldNames + 1] = knownName end
+    end
+    for _, oldName in ipairs(oldNames) do
+        characters[oldName] = nil
+        ns.Rules.RenameCharacter(oldName, name)
+    end
+
+    characters[name] = { typed = false, guid = guid }
 end
 
 ---The names of the characters of the ruleset and faction being played that logged in with Flag Up, by name.

@@ -134,3 +134,34 @@ function Rules.Value(place, field, character)
     end
     return DEFAULTS[field]
 end
+
+-- Renaming ---------------------------------------------------------------------------------------
+
+---Gives a renamed character's rules and overrides its new name: the rules that send to it, and its overrides, which
+---join those under the new name (the old name's fields win where both set one).
+---@param oldName string
+---@param newName string
+function Rules.RenameCharacter(oldName, newName)
+    ---@param line FlagUp.Line
+    local function renameIn(line)
+        if line.sendTo == oldName then line.sendTo = newName end
+        local overrides = line.overrides
+        if not overrides then return end
+        for _, override in pairs(overrides) do
+            if override.sendTo == oldName then override.sendTo = newName end
+        end
+        local old = overrides[oldName]
+        if old then
+            overrides[oldName] = nil
+            overrides[newName] = overrides[newName] or {}
+            for field, value in pairs(old) do overrides[newName][field] = value end
+        end
+    end
+
+    local lines = Rules.Lines()
+    for _, line in pairs(lines.categories) do renameIn(line) end
+    for _, subcategories in pairs(lines.subcategories) do
+        for _, line in pairs(subcategories) do renameIn(line) end
+    end
+    for _, line in pairs(lines.items) do renameIn(line) end
+end
