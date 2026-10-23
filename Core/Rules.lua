@@ -124,7 +124,7 @@ end
 ---@param field FlagUp.FieldName
 ---@param character string? nil: the shared value
 ---@return any
-function Rules.Value(place, field, character)
+local function resolvedValue(place, field, character)
     for _, line in ipairs(lineChain(place)) do
         if line then
             local override = character and line.overrides and line.overrides[character]
@@ -133,6 +133,18 @@ function Rules.Value(place, field, character)
         end
     end
     return DEFAULTS[field]
+end
+
+---The value a field takes on a line, for everyone or for a character (resolvedValue). A rule that would send a
+---character's items to itself keeps them: for that character, it is Don't send.
+---@param place FlagUp.LinePlace
+---@param field FlagUp.FieldName
+---@param character string? nil: the shared value
+---@return any
+function Rules.Value(place, field, character)
+    local value = resolvedValue(place, field, character)
+    if field == "sendTo" and character ~= nil and value == character then return false end
+    return value
 end
 
 -- Renaming ---------------------------------------------------------------------------------------

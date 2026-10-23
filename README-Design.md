@@ -40,6 +40,8 @@ A character can override a shared rule for itself, field by field: the rule (ano
 
 For each field, the closest line that sets it decides, from the item up to its category; on one line, the character's override comes before the shared value. With a shared Herb *Don't send* that Silvia overrides to *Send to Lyra*, and a shared Peacebloom *Send to Borin*, Silvia sends Peacebloom to Borin and the other herbs to Lyra.
 
+A rule never makes a character mail itself: for the character a rule sends to, the rule is *Don't send*. With a shared Herb *Send to Lyra*, Lyra keeps her herbs, and her pane shows *Don't send*.
+
 ## Design Constraints
 
 - **Look**: the default game look, built from the game's own templates; with EllesmereUI installed, the same frames take its theme through its skinning API. No custom-styled widgets.
