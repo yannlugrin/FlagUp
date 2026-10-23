@@ -40,7 +40,10 @@
         "BACKPACK_CONTAINER",
         "NUM_BAG_SLOTS",
         "NUM_TOTAL_EQUIPPED_BAG_SLOTS",
-        "BACK"
+        "BACK",
+        "PanelTemplates_SetNumTabs",
+        "PanelTemplates_SetTab",
+        "PanelTemplates_TabResize"
     ],
     "Lua.type.weakUnionCheck": true
 }
