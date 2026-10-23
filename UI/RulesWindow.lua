@@ -222,8 +222,13 @@ local function treeLine(kind, id, holdsLines, shown)
     end
 
     local rule = ns.Rules.LineAt(shown.place)
-    if rule then
-        local player = ns.Characters.PlayerName()
+    local player = ns.Characters.PlayerName()
+    local itemID = shown.place.itemID
+    if rule and itemID and ns.Ignored.IsIgnored(itemID, player) then
+        -- Never offered to the character being played: no rule to show.
+        line.rule = L["Ignored"]
+        line.inherited = true
+    elseif rule then
         local override = rule.overrides and rule.overrides[player]
         line.rule = treeRuleText(shown.place, player)
         line.overridden = override ~= nil and ns.Rules.SetsAField(override)
@@ -347,12 +352,19 @@ local function ruleDetail(shown)
     local player = ns.Characters.PlayerName()
     shownCharacter = shownCharacter or player
 
-    -- The tags: the character being played, then those that override the line and the one picked from +, by name.
+    -- The tags: the character being played, then those that override the line or ignore the item, and the one picked
+    -- from +, by name.
+    local itemID = shown.place.itemID
     local characters = {}
     for name in pairs(overrides) do
         if name ~= player then characters[#characters + 1] = name end
     end
-    if shownCharacter ~= player and not overrides[shownCharacter] then characters[#characters + 1] = shownCharacter end
+    for _, name in ipairs(itemID and ns.Ignored.CharactersIgnoring(itemID) or {}) do
+        if name ~= player and not tContains(characters, name) then characters[#characters + 1] = name end
+    end
+    if not tContains(characters, shownCharacter) and shownCharacter ~= player then
+        characters[#characters + 1] = shownCharacter
+    end
     table.sort(characters)
     table.insert(characters, 1, player)
 
@@ -364,7 +376,9 @@ local function ruleDetail(shown)
     local detail = fieldsDetail(shown.place, rule, nil) --[[@as FlagUp.RuleDetail]]
     detail.name, detail.path, detail.color = shown.name, shown.path, shown.color
     detail.isLine = line ~= nil
+    detail.ignoredByAll = itemID ~= nil and ns.Ignored.IsIgnoredByAll(itemID)
     local overridesDetail = fieldsDetail(shown.place, overrides[shownCharacter] or {}, shownCharacter)
+    overridesDetail.ignored = itemID ~= nil and ns.Ignored.IsIgnoredBy(itemID, shownCharacter)
     overridesDetail.characters = characters
     overridesDetail.selected = shownCharacter
     overridesDetail.addable = addable
@@ -577,6 +591,27 @@ pane.RemoveOverrideButton = CreateFrame("Button", nil, content, "UIPanelButtonTe
 pane.RemoveOverrideButton:SetPoint("BOTTOMLEFT", PANE_PADDING, PANE_PADDING)
 pane.RemoveOverrideButton:SetHeight(BUTTON_HEIGHT)
 
+---An ignored item's notice, under `above`, and its Stop ignoring button under it.
+---@param above Region
+---@return FontString notice
+---@return Button stopButton
+local function createIgnoredNotice(above)
+    local notice = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    notice:SetPoint("TOPLEFT", above, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    notice:SetPoint("RIGHT", -PANE_PADDING, 0)
+    notice:SetJustifyH("LEFT")
+
+    local stopButton = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
+    stopButton:SetText(L["Stop ignoring"])
+    stopButton:SetSize(math.max(BUTTON_WIDTH, stopButton:GetTextWidth() + 24), BUTTON_HEIGHT)
+    stopButton:SetPoint("TOPLEFT", notice, "BOTTOMLEFT", 0, -FIELD_SPACING)
+    return notice, stopButton
+end
+
+-- An item ignored by every character: in place of the whole line. By one character: in place of its override.
+pane.IgnoredNotice, pane.StopIgnoringButton = createIgnoredNotice(pane.Path)
+pane.OverrideIgnoredNotice, pane.OverrideStopIgnoringButton = createIgnoredNotice(pane.Tags)
+
 ---The tag at this place, created the first time it is needed.
 ---@param index integer
 ---@return Button
@@ -633,6 +668,7 @@ end
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
 ---@field stacks FlagUp.StacksFieldDetail
+---@field ignored boolean? the selected character ignores the item: the notice shows in place of its fields
 
 ---The selected line, ready to show.
 ---@class FlagUp.RuleDetail
@@ -644,6 +680,7 @@ end
 ---@field keep FlagUp.KeepFieldDetail? on an item
 ---@field stacks FlagUp.StacksFieldDetail
 ---@field isLine boolean? false: a plain heading, with no rule to remove
+---@field ignoredByAll boolean? every character ignores the item: the notice shows in place of the whole line
 ---@field overrides FlagUp.OverridesDetail
 
 ---Shows a field as set or taken from above: a field taken from above has its controls greyed out and disabled.
@@ -663,6 +700,9 @@ end
 ---@param detail FlagUp.RuleDetail|FlagUp.OverridesDetail
 ---@return FlagUp.Field[] fields the shown fields, in order
 local function showFieldSet(set, detail)
+    set.RuleField:Show()
+    set.StacksField:Show()
+
     -- The menus are built again: the client may keep the one built when the dropdown was first shown, for another
     -- line or character.
     set.RuleDropdown:GenerateMenu()
@@ -695,6 +735,11 @@ local function showFieldSet(set, detail)
     return fields
 end
 
+---@param set FlagUp.FieldSet
+local function hideFieldSet(set)
+    for _, field in ipairs({ set.RuleField, set.QualitiesField, set.KeepField, set.StacksField }) do field:Hide() end
+end
+
 ---Places the fields one under the other, below `previous`.
 ---@param previous Region as wide as the fields
 ---@param fields FlagUp.Field[]
@@ -723,6 +768,25 @@ function window:ShowRule(detail)
         pane.Name:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
     end
     pane.Path:SetText(detail.path or "")
+
+    -- Ignored by every character: only the notice, in place of the shared rule and the overrides, with Remove rule
+    -- beside Stop ignoring, to remove the line without taking the item back.
+    local ignoredByAll = detail.ignoredByAll == true
+    pane.IgnoredNotice:SetShown(ignoredByAll)
+    pane.StopIgnoringButton:SetShown(ignoredByAll)
+    for _, region in ipairs({ pane.Divider, pane.OverridesTitle, pane.Tags }) do region:SetShown(not ignoredByAll) end
+    if ignoredByAll then
+        pane.IgnoredNotice:SetText(L["Ignored by every character: it is not offered at the mailbox."])
+        hideFieldSet(pane.Shared)
+        hideFieldSet(pane.Override)
+        pane.RemoveRuleButton:ClearAllPoints()
+        pane.RemoveRuleButton:SetPoint("LEFT", pane.StopIgnoringButton, "RIGHT", 8, 0)
+        pane.RemoveRuleButton:SetShown(detail.isLine ~= false)
+        pane.RemoveOverrideButton:Hide()
+        pane.OverrideIgnoredNotice:Hide()
+        pane.OverrideStopIgnoringButton:Hide()
+        return
+    end
 
     local last = stackFields(pane.Path, showFieldSet(pane.Shared, detail))
     pane.RemoveRuleButton:ClearAllPoints()
@@ -758,6 +822,17 @@ function window:ShowRule(detail)
         end
     end)
 
+    -- Ignored by the selected character: the notice in place of its override.
+    local ignored = overrides.ignored == true
+    pane.OverrideIgnoredNotice:SetShown(ignored)
+    pane.OverrideStopIgnoringButton:SetShown(ignored)
+    if ignored then
+        pane.OverrideIgnoredNotice:SetText(L["Ignored by %s: it is not offered at the mailbox for this character."]
+            :format(overrides.selected))
+        hideFieldSet(pane.Override)
+        pane.RemoveOverrideButton:Hide()
+        return
+    end
     stackFields(pane.Tags, showFieldSet(pane.Override, overrides))
 
     -- Only a character with an override has one to remove.
@@ -793,18 +868,23 @@ local function setField(place, field, value, character)
     RulesWindow.Refresh()
 end
 
+---Frame 9's Inherit: every shared field inherited, the line and its overrides kept.
+---@param place FlagUp.LinePlace
+local function inheritAll(_, place)
+    ns.Rules.InheritAll(place)
+    RulesWindow.Refresh()
+end
+
+-- Remove, Inherit when characters override the line, then Cancel on the right. The game's popup places its buttons in
+-- their order and calls OnCancel for the second one: Escape only closes it.
 StaticPopupDialogs.FLAGUP_REMOVE_RULE = {
     text = "%s",
     button1 = L["Remove"],
-    button2 = CANCEL,
     OnAccept = function(_, place)
         ns.Rules.RemoveLine(place)
         RulesWindow.Refresh()
     end,
-    OnAlt = function(_, place)
-        ns.Rules.InheritAll(place)
-        RulesWindow.Refresh()
-    end,
+    noCancelOnEscape = true,
     timeout = 0,
     whileDead = true,
     hideOnEscape = true,
@@ -821,12 +901,17 @@ local function askToRemove(place)
 
     local popup = StaticPopupDialogs.FLAGUP_REMOVE_RULE
     local text
-    if #names > 0 then
-        popup.button3 = L["Inherit"]
+    -- An item ignored by every character shows no field to inherit: Remove or Cancel only.
+    local ignoredByAll = place.itemID ~= nil and ns.Ignored.IsIgnoredByAll(place.itemID)
+    if #names > 0 and ignoredByAll then
+        popup.button2, popup.OnCancel, popup.button3 = CANCEL, nil, nil
+        text = L["Remove the rule for %s, with the overrides of %s?"]:format(shown.name, table.concat(names, ", "))
+    elseif #names > 0 then
+        popup.button2, popup.OnCancel, popup.button3 = L["Inherit"], inheritAll, CANCEL
         text = L["Remove the rule for %s, with the overrides of %s? Inherit keeps the line and the overrides, every shared field inherited."]
             :format(shown.name, table.concat(names, ", "))
     else
-        popup.button3 = nil
+        popup.button2, popup.OnCancel, popup.button3 = CANCEL, nil, nil
         text = L["Remove the rule for %s?"]:format(shown.name)
     end
     StaticPopup_Show("FLAGUP_REMOVE_RULE", text, nil, place)
@@ -1011,4 +1096,6 @@ ns.Skin.Apply(function(S)
     S.Button(pane.RemoveRuleButton)
     S.Button(pane.AddOverrideButton)
     S.Button(pane.RemoveOverrideButton)
+    S.Button(pane.StopIgnoringButton)
+    S.Button(pane.OverrideStopIgnoringButton)
 end)

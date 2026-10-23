@@ -117,7 +117,7 @@ local function attachmentsFor(itemID, stacks, amount)
     return attachments
 end
 
----What the rules send from the bags, for the character being played, item by item.
+---What the rules send from the bags, for the character being played, item by item; ignored items are left out.
 ---@return FlagUp.Shipment[]
 function Mailing.Shipments()
     local character = ns.Characters.PlayerName()
@@ -125,7 +125,7 @@ function Mailing.Shipments()
     for itemID, stacks in pairs(bagStacks()) do
         local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
         local _, _, quality, _, _, _, _, stackSize = C_Item.GetItemInfo(itemID)
-        if classID and quality then
+        if classID and quality and not ns.Ignored.IsIgnored(itemID, character) then
             local place = { classID = classID, subClassID = subClassID, itemID = itemID }
             local recipient = ns.Rules.Value(place, "sendTo", character)
             if recipient and qualityPasses(place, character, quality) then

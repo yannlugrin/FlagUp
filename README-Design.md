@@ -42,6 +42,10 @@ For each field, the closest line that sets it decides, from the item up to its c
 
 A rule never makes a character mail itself: for the character a rule sends to, the rule is *Don't send*. With a shared Herb *Send to Lyra*, Lyra keeps her herbs, and her pane shows *Don't send*.
 
+### Ignored items
+
+An ignored item is never offered at the mailbox, whatever the rules say: it is not a rule, it means "don't show me this any more". An item is ignored by every character of the ruleset and faction, or by one character only. Only items are ignored; a whole category is a *Don't send* rule. An ignored item keeps its rule line, if it has one; the line says it is ignored. In the tree, its Rule column reads *Ignored* for the character being played. In the pane, an item ignored by every character shows only *Ignored by every character*, **Stop ignoring** and **Remove rule**, in place of its fields and overrides; an item ignored by one character shows that notice and **Stop ignoring** in place of the character's override, and that character has a tag. Dropping an ignored item on the rules window adds its line, shown ignored.
+
 ## Design Constraints
 
 - **Look**: the default game look, built from the game's own templates; with EllesmereUI installed, the same frames take its theme through its skinning API. No custom-styled widgets.
@@ -91,7 +95,7 @@ The usual add-on minimap button, the one most add-ons show (LibDBIcon). Left-cli
 
 A panel attached to the right of the mailbox, open with it.
 
-- The items to send, grouped by recipient, each group with its number of mails. Each item has a checkbox: unchecked, it stays in the bags this time only.
+- The items to send, grouped by recipient, each group with its number of mails. Each item has a checkbox: unchecked, it stays in the bags this time only. At the end of its row, an **Ignore** button (the game's loot Pass glyph) opens the game's popup: **All characters**, **Only <character being played>**, **Cancel**; the item leaves the list at once.
 - At the bottom: the number of mails, the postage, and **Send**.
 
 With automatic sending on (or the send key held while it is off), the panel opens on frame 8 instead.

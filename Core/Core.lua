@@ -12,6 +12,7 @@ local addonName, ns = ...
 ---@field Characters FlagUp.Characters
 ---@field Categories FlagUp.Categories
 ---@field Rules FlagUp.Rules
+---@field Ignored FlagUp.Ignored
 ---@field Mailing FlagUp.Mailing
 ---@field Skin FlagUp.Skin
 ---@field TreeRow FlagUp.TreeRow

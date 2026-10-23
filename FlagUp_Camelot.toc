@@ -22,6 +22,7 @@ Core\Store.lua
 Core\Characters.lua
 Core\Categories.lua
 Core\Rules.lua
+Core\Ignored.lua
 Core\Mailing.lua
 UI\Skin.lua
 UI\TreeRow.lua

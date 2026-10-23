@@ -17,6 +17,7 @@ ns.MailPanel = MailPanel
 ---@field count integer how many are sent
 ---@field checked boolean unchecked: it stays in the bags this time
 ---@field onToggle fun()? a click on its checkbox
+---@field onIgnore fun()? a click on its Ignore button
 
 ---A recipient and the items it gets, ready to show.
 ---@class FlagUp.MailGroup
@@ -58,6 +59,9 @@ local ITEM_HEIGHT = 24
 local CHECKBOX_SIZE = 26
 local ICON_SIZE = 18
 local SKINNED_CHECKBOX_SIZE = 16
+local IGNORE_BUTTON_SIZE = 16
+-- The game's loot Pass button, as the Ignore button.
+local IGNORE_TEXTURE, IGNORE_TEXTURE_DOWN = "Interface\\Buttons\\UI-GroupLoot-Pass-Up", "Interface\\Buttons\\UI-GroupLoot-Pass-Down"
 local MAIL_TITLE_HEIGHT = 18
 local SPINNER_SIZE = 16
 local ATTACHMENT_SIZE, ATTACHMENT_GAP = 26, 2
@@ -114,6 +118,7 @@ list.Empty:SetText(L["Nothing to send."])
 ---@field Icon Texture
 ---@field Name FontString
 ---@field Count FontString
+---@field IgnoreButton Button
 ---@field item FlagUp.MailItem the item shown
 
 ---@param row FlagUp.MailItemRow
@@ -129,8 +134,24 @@ local function createItemRow(row)
     row.Icon:SetSize(ICON_SIZE, ICON_SIZE)
     row.Icon:SetPoint("LEFT", row.Checkbox, "RIGHT", 2, 0)
 
+    row.IgnoreButton = CreateFrame("Button", nil, row)
+    row.IgnoreButton:SetSize(IGNORE_BUTTON_SIZE, IGNORE_BUTTON_SIZE)
+    row.IgnoreButton:SetPoint("RIGHT", -8, 0)
+    row.IgnoreButton:SetNormalTexture(IGNORE_TEXTURE)
+    row.IgnoreButton:SetPushedTexture(IGNORE_TEXTURE_DOWN)
+    row.IgnoreButton:SetHighlightTexture(IGNORE_TEXTURE, "ADD")
+    row.IgnoreButton:SetScript("OnClick", function()
+        if row.item.onIgnore then row.item.onIgnore() end
+    end)
+    row.IgnoreButton:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Ignore this item"])
+        GameTooltip:Show()
+    end)
+    row.IgnoreButton:SetScript("OnLeave", GameTooltip_Hide)
+
     row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightRight")
-    row.Count:SetPoint("RIGHT", -8, 0)
+    row.Count:SetPoint("RIGHT", row.IgnoreButton, "LEFT", -6, 0)
 
     row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLeft")
     row.Name:SetPoint("LEFT", row.Icon, "RIGHT", 6, 0)
@@ -398,6 +419,35 @@ end
 ---@type table<integer, true> the items unchecked during this visit to the mailbox, by item ID
 local skipped = {}
 
+-- Ignoring an item: by every character, or by the one being played; Cancel on the right. The game's popup places its
+-- buttons in their order and calls OnCancel for the second one: Escape only closes it.
+StaticPopupDialogs.FLAGUP_IGNORE_ITEM = {
+    text = "%s",
+    button1 = L["All characters"],
+    button3 = CANCEL,
+    -- The rules window shows the item ignored, and the panel without it.
+    OnAccept = function(_, itemID)
+        ns.Ignored.Add(itemID)
+        ns.RulesWindow.Refresh()
+    end,
+    OnCancel = function(_, itemID)
+        ns.Ignored.Add(itemID, ns.Characters.PlayerName())
+        ns.RulesWindow.Refresh()
+    end,
+    noCancelOnEscape = true,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+}
+
+---@param itemID integer
+local function askToIgnore(itemID)
+    StaticPopupDialogs.FLAGUP_IGNORE_ITEM.button2 = L["Only %s"]:format(ns.Characters.PlayerName())
+    local name = C_Item.GetItemNameByID(itemID) or RETRIEVING_ITEM_INFO
+    StaticPopup_Show("FLAGUP_IGNORE_ITEM", L["Ignore %s? It will no longer be offered at the mailbox."]:format(name), nil,
+        itemID)
+end
+
 ---What the bags would send, by recipient and item name; an unchecked item is listed but counts for no mail.
 ---@return FlagUp.MailPreview
 local function mailPreview()
@@ -427,6 +477,7 @@ local function mailPreview()
                 skipped[itemID] = not skipped[itemID] or nil
                 MailPanel.Refresh()
             end,
+            onIgnore = function() askToIgnore(itemID) end,
         })
         if checked then attachments[recipient] = attachments[recipient] + #shipment.attachments end
     end

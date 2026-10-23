@@ -26,6 +26,7 @@ FlagUp/
 │   ├── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
 │   ├── Categories.lua             The game's item categories (classes and subclasses), as the client names them
 │   ├── Rules.lua                  The rule lines of the ruleset and faction being played: categories, subcategories, items
+│   ├── Ignored.lua                The items never offered at the mailbox: ignored by every character, or by one
 │   └── Mailing.lua                What the bags hold that the rules send: amounts, the stacks to attach, mails and postage
 ├── Locales/
 │   ├── enUS.lua                   English texts (AceLocale default)
@@ -64,6 +65,10 @@ FlagUpDB = {
                     ["Lyra Moonfield"] = { typed = false, guid = "Player-4613-00D061FC" },  -- known: logged in with Flag Up
                     ["Kael Duskwhisper"] = { typed = true },  -- typed by the player
                 },
+                ignored = {               -- never offered at the mailbox
+                    all = { [2589] = true },                                -- by item ID: by every character
+                    characters = { ["Silvia Ashgrove"] = { [2447] = true } },  -- by name, then item ID
+                },
                 rules = {
                     categories = {        -- by item class ID
                         [7] = { sendTo = false },                   -- Trade Goods
@@ -93,7 +98,8 @@ FlagUpDB = {
 
 - **A ruleset-faction pair** gets its entry when its first character logs in; it starts with no rules.
 - **A typed character** joins the pair of the character that typed it.
-- **A renamed character** (the game can force a rename): a known character saves its GUID, which a rename doesn't change. At login, a GUID saved under another name moves that character to its new name, with the rules that send to it and its overrides; where it already had overrides under the new name, the old name's fields win.
+- **A renamed character** (the game can force a rename): a known character saves its GUID, which a rename doesn't change. At login, a GUID saved under another name moves that character to its new name, with the rules that send to it, its overrides and its ignored items; where it already had overrides under the new name, the old name's fields win.
+- **`ignored`**: the items never offered at the mailbox, created with the first one; `all` for every character of the pair, `characters` for one. An ignored item keeps its rule line.
 - **A line** is one entry in `rules`, added by the player; it stays until removed. A field the line doesn't set is `nil`: it is inherited from the line above (item → subcategory → category), and above the categories from the defaults (*Don't send*, no quality filter, nothing kept, any amount). A new line sets no field.
 - **`sendTo`**: the recipient's name, or `false` for *Don't send*.
 - **`qualities`** (Armor and Weapon categories and subcategories): the selected qualities; an empty table means none selected, no filter.

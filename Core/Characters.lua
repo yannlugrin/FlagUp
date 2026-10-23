@@ -15,6 +15,7 @@ ns.Characters = Characters
 ---@class FlagUp.RulesetFaction
 ---@field characters table<string, FlagUp.Character> by name, "First Surname"
 ---@field rules FlagUp.RuleLines? created with the first line
+---@field ignored FlagUp.IgnoredItems? created with the first item ignored
 
 ---The ruleset the character plays on: Normal, PvP, RP or Hardcore.
 ---@return string
@@ -48,8 +49,8 @@ function Characters.PlayerRulesetFaction()
 end
 
 ---Adds the character being played to the known characters of its ruleset and faction. A character typed before
----becomes known. A character known under another name was renamed (the game can force it): its rules and overrides
----move to the new name. Call on PLAYER_LOGIN.
+---becomes known. A character known under another name was renamed (the game can force it): its rules, overrides and
+---ignored items move to the new name. Call on PLAYER_LOGIN.
 function Characters.RecordPlayer()
     local characters = Characters.PlayerRulesetFaction().characters
     local name, guid = Characters.PlayerName(), UnitGUID("player")
@@ -61,6 +62,7 @@ function Characters.RecordPlayer()
     for _, oldName in ipairs(oldNames) do
         characters[oldName] = nil
         ns.Rules.RenameCharacter(oldName, name)
+        ns.Ignored.RenameCharacter(oldName, name)
     end
 
     characters[name] = { typed = false, guid = guid }

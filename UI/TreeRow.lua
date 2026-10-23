@@ -26,8 +26,9 @@ ns.TreeRow = TreeRow
 ---@field onToggle fun()? a click on its open or closed mark
 
 local NAME_LEFT = 10
--- The rule leaves room for a category's +/- mark on the right; a recipient's mail count has none.
-local RULE_RIGHT, MAILS_RIGHT = -28, -8
+-- The rule leaves room for a category's +/- mark on the right; a recipient's mail count ends where its items' counts
+-- do, left of their Ignore button.
+local RULE_RIGHT, MAILS_RIGHT = -28, -30
 local OVERRIDE_GLYPH_TEXTURE = "Interface\\AddOns\\" .. addonName .. "\\Media\\Glyphs\\Person"
 local OVERRIDE_GLYPH_SIZE = 12
 local CATEGORY_HEIGHT, LINE_HEIGHT = 28, 22
