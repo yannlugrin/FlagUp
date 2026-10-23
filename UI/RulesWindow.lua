@@ -25,6 +25,9 @@ local RULE_LEFT = NAME_WIDTH + 8
 
 local PANE_GAP = 16
 local PANE_PADDING = 12
+-- The line's icon, left of its name and path: as tall as both. A category or subcategory shows a crate.
+local PANE_ICON_SIZE = 30
+local CATEGORY_ICON = "Interface\\Icons\\INV_Crate_01"
 -- The pane leaves as much room on the window's right as the tree on its left.
 local PANE_WIDTH = WIDTH - TREE_LEFT - TREE_WIDTH - PANE_GAP - TREE_LEFT
 local FIELD_SPACING = 12
@@ -409,6 +412,7 @@ local function ruleDetail(shown)
 
     local detail = fieldsDetail(shown.place, rule, nil) --[[@as FlagUp.RuleDetail]]
     detail.name, detail.path, detail.color = shown.name, shown.path, shown.color
+    detail.itemID = shown.place.itemID
     detail.isLine = line ~= nil
     detail.ignoredByAll = itemID ~= nil and ns.Ignored.IsIgnoredByAll(itemID)
     local overridesDetail = fieldsDetail(shown.place, overrides[shownCharacter] or {}, shownCharacter)
@@ -493,8 +497,28 @@ content:SetAllPoints()
 content:Hide()
 pane.Content = content
 
+-- The header: an item's icon, the name and the path; the fields hang under it, from the pane's left edge.
+pane.Header = CreateFrame("Frame", nil, content)
+pane.Header:SetPoint("TOPLEFT", PANE_PADDING, -PANE_PADDING)
+pane.Header:SetPoint("RIGHT", -PANE_PADDING, 0)
+
+-- An item's icon, with its tooltip.
+pane.Icon = content:CreateTexture(nil, "ARTWORK")
+pane.Icon:SetSize(PANE_ICON_SIZE, PANE_ICON_SIZE)
+pane.Icon:SetPoint("TOPLEFT", PANE_PADDING, -PANE_PADDING)
+
+pane.IconHover = CreateFrame("Frame", nil, content)
+pane.IconHover:SetAllPoints(pane.Icon)
+pane.IconHover:SetScript("OnEnter", function(hover)
+    if not pane.itemID then return end
+    GameTooltip:SetOwner(hover, "ANCHOR_RIGHT")
+    GameTooltip:SetItemByID(pane.itemID)
+    GameTooltip:Show()
+end)
+pane.IconHover:SetScript("OnLeave", GameTooltip_Hide)
+
 pane.Name = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-pane.Name:SetPoint("TOPLEFT", PANE_PADDING, -PANE_PADDING)
+pane.Name:SetPoint("TOPLEFT", pane.Icon, "TOPRIGHT", 8, 0)
 pane.Name:SetPoint("RIGHT", -PANE_PADDING, 0)
 pane.Name:SetJustifyH("LEFT")
 pane.Name:SetWordWrap(false)
@@ -645,7 +669,7 @@ local function createIgnoredNotice(above)
 end
 
 -- An item ignored by every character: in place of the whole line. By one character: in place of its override.
-pane.IgnoredNotice, pane.StopIgnoringButton = createIgnoredNotice(pane.Path)
+pane.IgnoredNotice, pane.StopIgnoringButton = createIgnoredNotice(pane.Header)
 pane.OverrideIgnoredNotice, pane.OverrideStopIgnoringButton = createIgnoredNotice(pane.Tags)
 
 ---The tag at this place, created the first time it is needed.
@@ -711,6 +735,7 @@ end
 ---@field name string
 ---@field path string? the categories above the line (Trade Goods › Herb)
 ---@field color ColorMixin? the quality colour, on an item
+---@field itemID integer? on an item: its icon shows, with its tooltip; else a crate
 ---@field rule FlagUp.RuleFieldDetail
 ---@field qualities FlagUp.QualitiesFieldDetail? on an equipment category or subcategory
 ---@field keep FlagUp.KeepFieldDetail? on an item
@@ -797,6 +822,12 @@ function window:ShowRule(detail)
     content:SetShown(detail ~= nil)
     if not detail then return end
 
+    -- The icon, then the name and path beside it: an item's own, with its tooltip; a crate for a category or
+    -- subcategory.
+    pane.itemID = detail.itemID
+    pane.IconHover:SetShown(detail.itemID ~= nil)
+    pane.Icon:SetTexture(detail.itemID and C_Item.GetItemIconByID(detail.itemID) or CATEGORY_ICON)
+
     pane.Name:SetText(detail.name)
     if detail.color then
         pane.Name:SetTextColor(detail.color:GetRGB())
@@ -804,6 +835,9 @@ function window:ShowRule(detail)
         pane.Name:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
     end
     pane.Path:SetText(detail.path or "")
+    -- As tall as the icon, or as the name and the path.
+    local textHeight = pane.Name:GetStringHeight() + 4 + pane.Path:GetStringHeight()
+    pane.Header:SetHeight(math.max(PANE_ICON_SIZE, textHeight))
 
     -- Ignored by every character: only the notice, in place of the shared rule and the overrides, with Remove rule
     -- beside Stop ignoring, to remove the line without taking the item back.
@@ -824,7 +858,7 @@ function window:ShowRule(detail)
         return
     end
 
-    local last = stackFields(pane.Path, showFieldSet(pane.Shared, detail))
+    local last = stackFields(pane.Header, showFieldSet(pane.Shared, detail))
     pane.RemoveRuleButton:ClearAllPoints()
     pane.RemoveRuleButton:SetPoint("TOPLEFT", last, "BOTTOMLEFT", 0, -FIELD_SPACING)
     pane.RemoveRuleButton:SetShown(detail.isLine ~= false)

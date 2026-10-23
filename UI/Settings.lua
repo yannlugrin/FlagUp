@@ -44,6 +44,16 @@ Settings.CreateDropdown(category, Settings.RegisterProxySetting(category, "FlagU
     function(value) ns.settings.sendKey = value end),
     Settings.CreateModifiedClickOptions({}),
     L["With automatic sending on, hold this key when opening the mailbox to skip sending. With it off, hold it to send."])
+Settings.CreateCheckbox(category, Settings.RegisterProxySetting(category, "FlagUp_UncheckCheap",
+    Settings.VarType.Boolean, L["Uncheck cheap items"], ns.Store.DEFAULTS.profile.uncheckCheap,
+    function() return ns.settings.uncheckCheap end,
+    function(value) ns.settings.uncheckCheap = value end),
+    L["An item a vendor pays less for than its postage (30 copper a stack) starts unchecked at the mailbox, and isn't sent automatically. You can still check it."])
+Settings.CreateCheckbox(category, Settings.RegisterProxySetting(category, "FlagUp_UncheckUnpriced",
+    Settings.VarType.Boolean, L["Uncheck unsellable items"], ns.Store.DEFAULTS.profile.uncheckUnpriced,
+    function() return ns.settings.uncheckUnpriced end,
+    function(value) ns.settings.uncheckUnpriced = value end),
+    L["An item a vendor won't buy starts unchecked at the mailbox, and isn't sent automatically. You can still check it."])
 
 Settings.RegisterAddOnCategory(category)
 

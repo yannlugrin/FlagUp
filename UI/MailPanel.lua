@@ -11,12 +11,14 @@ ns.MailPanel = MailPanel
 
 ---An item the rules choose, ready to show.
 ---@class FlagUp.MailItem
+---@field itemID integer for its tooltip
 ---@field name string
 ---@field icon number|string
 ---@field color ColorMixin the quality colour
 ---@field count integer how many are sent
 ---@field checked boolean unchecked: it stays in the bags this time
 ---@field onToggle fun()? a click on its checkbox
+---@field uncheckedWhy string? unchecked by the settings, not by hand: why, for its checkbox's tooltip
 ---@field onIgnore fun()? a click on its Ignore button
 
 ---A recipient and the items it gets, ready to show.
@@ -116,6 +118,7 @@ list.Empty:SetText(L["Nothing to send."])
 ---@class FlagUp.MailItemRow: Frame
 ---@field Checkbox CheckButton
 ---@field Icon Texture
+---@field IconHover Frame over the icon: the item's tooltip
 ---@field Name FontString
 ---@field Count FontString
 ---@field IgnoreButton Button
@@ -129,10 +132,28 @@ local function createItemRow(row)
     row.Checkbox:SetScript("OnClick", function()
         if row.item.onToggle then row.item.onToggle() end
     end)
+    -- Unchecked by the settings: why, and where to change it.
+    row.Checkbox:SetScript("OnEnter", function(checkbox)
+        if not row.item.uncheckedWhy then return end
+        GameTooltip:SetOwner(checkbox, "ANCHOR_RIGHT")
+        GameTooltip:SetText(row.item.uncheckedWhy, HIGHLIGHT_FONT_COLOR:GetRGB())
+        GameTooltip:AddLine(L["Check it to send it this time; Flag Up's settings change this."], nil, nil, nil, true)
+        GameTooltip:Show()
+    end)
+    row.Checkbox:SetScript("OnLeave", GameTooltip_Hide)
 
     row.Icon = row:CreateTexture(nil, "ARTWORK")
     row.Icon:SetSize(ICON_SIZE, ICON_SIZE)
     row.Icon:SetPoint("LEFT", row.Checkbox, "RIGHT", 2, 0)
+
+    row.IconHover = CreateFrame("Frame", nil, row)
+    row.IconHover:SetAllPoints(row.Icon)
+    row.IconHover:SetScript("OnEnter", function(hover)
+        GameTooltip:SetOwner(hover, "ANCHOR_RIGHT")
+        GameTooltip:SetItemByID(row.item.itemID)
+        GameTooltip:Show()
+    end)
+    row.IconHover:SetScript("OnLeave", GameTooltip_Hide)
 
     row.IgnoreButton = CreateFrame("Button", nil, row)
     row.IgnoreButton:SetSize(IGNORE_BUTTON_SIZE, IGNORE_BUTTON_SIZE)
@@ -416,8 +437,32 @@ end
 
 -- The preview from the bags --------------------------------------------------------------------
 
----@type table<integer, true> the items unchecked during this visit to the mailbox, by item ID
-local skipped = {}
+---@type table<integer, boolean> the items checked or unchecked by hand during this visit to the mailbox, by item ID
+local choices = {}
+
+---Whether an item goes: as checked or unchecked by hand this visit, else as the settings judge its worth.
+---@param shipment FlagUp.Shipment
+---@return boolean
+local function isChecked(shipment)
+    local choice = choices[shipment.itemID]
+    if choice ~= nil then return choice end
+    return ns.Mailing.UncheckReason(shipment) == nil
+end
+
+---Why the settings leave an item unchecked, as its checkbox's tooltip says it; nil when it goes, or was chosen by hand.
+---@param shipment FlagUp.Shipment
+---@return string?
+local function uncheckedWhy(shipment)
+    if choices[shipment.itemID] ~= nil then return nil end
+    local reason = ns.Mailing.UncheckReason(shipment)
+    if reason == "unpriced" then return L["Unchecked: a vendor won't buy it."] end
+    if reason == "cheap" then
+        local _, postage = ns.Mailing.MailsFor(#shipment.attachments)
+        return L["Unchecked: worth %s, less than its postage, %s."]:format(
+            GetMoneyString(ns.Mailing.Value(shipment)), GetMoneyString(postage))
+    end
+    return nil
+end
 
 -- Ignoring an item: by every character, or by the one being played; Cancel on the right. The game's popup places its
 -- buttons in their order and calls OnCancel for the second one: Escape only closes it.
@@ -465,18 +510,20 @@ local function mailPreview()
             attachments[recipient] = 0
         end
 
-        local checked = not skipped[itemID]
+        local checked = isChecked(shipment)
         local quality = C_Item.GetItemQualityByID(itemID)
         table.insert(group.items, {
+            itemID = itemID,
             name = C_Item.GetItemNameByID(itemID) or RETRIEVING_ITEM_INFO,
             icon = C_Item.GetItemIconByID(itemID),
             color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR,
             count = shipment.count,
             checked = checked,
             onToggle = function()
-                skipped[itemID] = not skipped[itemID] or nil
+                choices[itemID] = not checked
                 MailPanel.Refresh()
             end,
+            uncheckedWhy = uncheckedWhy(shipment),
             onIgnore = function() askToIgnore(itemID) end,
         })
         if checked then attachments[recipient] = attachments[recipient] + #shipment.attachments end
@@ -521,7 +568,7 @@ end
 local function startSending()
     local shipments = {}
     for _, shipment in ipairs(ns.Mailing.Shipments()) do
-        if not skipped[shipment.itemID] then shipments[#shipments + 1] = shipment end
+        if isChecked(shipment) then shipments[#shipments + 1] = shipment end
     end
     table.sort(shipments, function(a, b) return a.itemID < b.itemID end)
     local parcels = ns.Mailing.Parcels(shipments)
@@ -559,7 +606,7 @@ function MailPanel.Open()
     panel:ClearAllPoints()
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", MAILBOX_GAP, 0)
     panel:SetPoint("BOTTOMLEFT", MailFrame, "BOTTOMRIGHT", MAILBOX_GAP, 0)
-    skipped = {}
+    choices = {}
     local preview = mailPreview()
     panel:ShowPreview(preview)
     panel:Show()

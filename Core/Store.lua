@@ -14,6 +14,8 @@ ns.Store = Store
 ---@field launcher { hide: boolean, showInCompartment: boolean, minimapPos: number? } LibDBIcon's own format: the minimap button and the add-on compartment entry
 ---@field sendAutomatically boolean the mailbox sends as soon as it opens
 ---@field sendKey "SHIFT"|"CTRL"|"ALT"|"NONE" held when the mailbox opens: skips the automatic sending, or sends while it is off
+---@field uncheckCheap boolean the mailbox leaves unchecked an item worth less than its postage
+---@field uncheckUnpriced boolean the mailbox leaves unchecked an item a vendor won't buy
 
 Store.DEFAULTS = {
     global = {
@@ -23,6 +25,8 @@ Store.DEFAULTS = {
         launcher = { hide = false, showInCompartment = true },
         sendAutomatically = false,
         sendKey = "SHIFT",
+        uncheckCheap = true,
+        uncheckUnpriced = false,
     },
 }
 

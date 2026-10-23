@@ -92,6 +92,8 @@ FlagUpDB = {
             launcher = { hide = false, showInCompartment = true },  -- LibDBIcon's own format, minimapPos included
             sendAutomatically = false,
             sendKey = "SHIFT",        -- "SHIFT", "CTRL", "ALT" or "NONE"
+            uncheckCheap = true,      -- an item worth less than its postage starts unchecked
+            uncheckUnpriced = false,  -- an item a vendor won't buy starts unchecked
         },
     },
 }

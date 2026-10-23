@@ -31,6 +31,7 @@ local LAST_BAG = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
 ---@field recipient string
 ---@field count integer
 ---@field attachments FlagUp.Attachment[]
+---@field sellPrice integer what a vendor pays for one, in copper; 0: a vendor won't buy it
 
 ---Whether a bag slot holds an item of an equipment set: it stays with the character.
 ---@param bag integer
@@ -124,7 +125,7 @@ function Mailing.Shipments()
     local shipments = {}
     for itemID, stacks in pairs(bagStacks()) do
         local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
-        local _, _, quality, _, _, _, _, stackSize = C_Item.GetItemInfo(itemID)
+        local _, _, quality, _, _, _, _, stackSize, _, _, sellPrice = C_Item.GetItemInfo(itemID)
         if classID and quality and not ns.Ignored.IsIgnored(itemID, character) then
             local place = { classID = classID, subClassID = subClassID, itemID = itemID }
             local recipient = ns.Rules.Value(place, "sendTo", character)
@@ -135,13 +136,32 @@ function Mailing.Shipments()
                 if amount > 0 then
                     shipments[#shipments + 1] = {
                         itemID = itemID, recipient = recipient, count = amount,
-                        attachments = attachmentsFor(itemID, stacks, amount),
+                        attachments = attachmentsFor(itemID, stacks, amount), sellPrice = sellPrice or 0,
                     }
                 end
             end
         end
     end
     return shipments
+end
+
+---Why the settings leave a shipment unchecked: with Uncheck unsellable items on, a vendor won't buy it ("unpriced");
+---with Uncheck cheap items on, its vendor value is below the postage of its stacks ("cheap"). nil: it goes.
+---@param shipment FlagUp.Shipment
+---@return "cheap"|"unpriced"|nil
+function Mailing.UncheckReason(shipment)
+    if shipment.sellPrice == 0 then return ns.settings.uncheckUnpriced and "unpriced" or nil end
+    if ns.settings.uncheckCheap and Mailing.Value(shipment) < #shipment.attachments * POSTAGE_PER_ATTACHMENT then
+        return "cheap"
+    end
+    return nil
+end
+
+---What a vendor pays for a shipment, in copper.
+---@param shipment FlagUp.Shipment
+---@return integer
+function Mailing.Value(shipment)
+    return shipment.sellPrice * shipment.count
 end
 
 ---How many mails a number of attachments takes, and their postage in copper.
