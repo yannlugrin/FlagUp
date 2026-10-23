@@ -24,6 +24,8 @@ ns.TreeRow = TreeRow
 ---@field selected boolean?
 ---@field onClick fun()? a click on the row
 ---@field onToggle fun()? a click on its open or closed mark
+---@field onIgnored fun()? in the rules tree, on a category or subcategory holding ignored items: a click on the ignore
+---glyph after its name
 
 local NAME_LEFT = 10
 -- The rule leaves room for a category's +/- mark on the right; a recipient's mail count ends where its items' counts
@@ -31,6 +33,9 @@ local NAME_LEFT = 10
 local RULE_RIGHT, MAILS_RIGHT = -28, -30
 local OVERRIDE_GLYPH_TEXTURE = "Interface\\AddOns\\" .. addonName .. "\\Media\\Glyphs\\Person"
 local OVERRIDE_GLYPH_SIZE = 12
+-- The game's loot Pass glyph, as the ignore glyph.
+local IGNORED_GLYPH_TEXTURE = "Interface\\Buttons\\UI-GroupLoot-Pass-Up"
+local IGNORED_GLYPH_SIZE = 14
 local CATEGORY_HEIGHT, LINE_HEIGHT = 28, 22
 local SUBCATEGORY_INDENT, ITEM_INDENT = 14, 34
 local ICON_SIZE = 18
@@ -47,6 +52,7 @@ local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-Highlig
 ---@field Icon Texture
 ---@field Name FontString
 ---@field OverrideGlyph Texture
+---@field IgnoredButton Button the ignore glyph, while the line holds ignored items
 ---@field Rule FontString
 ---@field ToggleButton Button over the open or closed mark, while the line has one
 ---@field line FlagUp.TreeLine the line shown
@@ -93,11 +99,27 @@ local function createRow(row, ruleLeft)
     row.OverrideGlyph:SetTexture(OVERRIDE_GLYPH_TEXTURE)
     row.OverrideGlyph:SetVertexColor(NORMAL_FONT_COLOR:GetRGB())
     row.OverrideGlyph:SetSize(OVERRIDE_GLYPH_SIZE, OVERRIDE_GLYPH_SIZE)
-    row.OverrideGlyph:SetPoint("LEFT", row.Name, "RIGHT", 4, 0)
 
     row.Rule = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLeft")
     row.Rule:SetPoint("LEFT", ruleLeft, 0)
     row.Rule:SetWordWrap(false)
+
+    row.IgnoredButton = CreateFrame("Button", nil, row)
+    row.IgnoredButton:SetSize(IGNORED_GLYPH_SIZE, IGNORED_GLYPH_SIZE)
+    row.IgnoredButton:SetNormalTexture(IGNORED_GLYPH_TEXTURE)
+    row.IgnoredButton:SetHighlightTexture(IGNORED_GLYPH_TEXTURE, "ADD")
+    -- Grey: a mark that the line holds ignored items, not a button to ignore it.
+    row.IgnoredButton:GetNormalTexture():SetDesaturated(true)
+    row.IgnoredButton:GetHighlightTexture():SetDesaturated(true)
+    row.IgnoredButton:SetScript("OnClick", function()
+        if row.line.onIgnored then row.line.onIgnored() end
+    end)
+    row.IgnoredButton:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Ignored items here: click to see them"])
+        GameTooltip:Show()
+    end)
+    row.IgnoredButton:SetScript("OnLeave", GameTooltip_Hide)
 
     row.ToggleButton = CreateFrame("Button", nil, row)
     row.ToggleButton:SetScript("OnClick", function()
@@ -159,11 +181,26 @@ function TreeRow.Init(row, line, ruleLeft)
         row.Name:SetTextColor(NORMAL_FONT_COLOR:GetRGB())
     end
 
-    -- The name is as wide as its text, so the glyph follows it, within the name column.
-    local glyphSpace = line.overridden and OVERRIDE_GLYPH_SIZE + 4 or 0
-    local nameSpace = ruleLeft - 8 - nameLeft - glyphSpace
+    -- Each glyph has its own column, just left of the Rule column: the override glyph against it, the ignore glyph
+    -- before it, shown or not, so each kind lines up from row to row. The name takes the room left of those shown.
+    local overrideRight = ruleLeft - 6
+    local ignoredRight = overrideRight - OVERRIDE_GLYPH_SIZE - 4
+    local glyphsLeft = ruleLeft
+    if line.onIgnored then
+        glyphsLeft = ignoredRight - IGNORED_GLYPH_SIZE
+    elseif line.overridden then
+        glyphsLeft = overrideRight - OVERRIDE_GLYPH_SIZE
+    end
+    local nameSpace = math.min(ruleLeft - 8, glyphsLeft - 4) - nameLeft
     row.Name:SetWidth(math.min(row.Name:GetUnboundedStringWidth(), nameSpace))
+
     row.OverrideGlyph:SetShown(line.overridden == true)
+    row.OverrideGlyph:ClearAllPoints()
+    row.OverrideGlyph:SetPoint("RIGHT", row, "LEFT", overrideRight, 0)
+
+    row.IgnoredButton:SetShown(line.onIgnored ~= nil)
+    row.IgnoredButton:ClearAllPoints()
+    row.IgnoredButton:SetPoint("RIGHT", row, "LEFT", ignoredRight, 0)
 
     -- A recipient's mail count lines up with its items' counts, on the right.
     row.Rule:SetPoint("RIGHT", line.mails and MAILS_RIGHT or RULE_RIGHT, 0)

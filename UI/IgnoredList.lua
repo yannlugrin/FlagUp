@@ -24,6 +24,7 @@ local ICON_SIZE = 18
 local REMOVE_SIZE = 16
 -- The game's ready check cross, as the Stop ignoring button.
 local REMOVE_TEXTURE = "Interface\\RaidFrame\\ReadyCheck-NotReady"
+local CLEAR_SIZE = 16
 
 local view = CreateFrame("Frame", nil, window)
 view:SetPoint("TOPLEFT", VIEW_LEFT, VIEW_TOP)
@@ -36,6 +37,25 @@ IgnoredList.View = view
 view.Filter = CreateFrame("DropdownButton", nil, view, "WowStyle1DropdownTemplate")
 view.Filter:SetWidth(FILTER_WIDTH)
 view.Filter:SetPoint("TOPLEFT", FILTER_LEFT, 0)
+
+-- While a filter is set: back to every category.
+view.ClearFilter = CreateFrame("Button", nil, view)
+view.ClearFilter:SetSize(CLEAR_SIZE, CLEAR_SIZE)
+view.ClearFilter:SetPoint("LEFT", view.Filter, "RIGHT", 6, 0)
+-- The rows' cross, grey: red again under the mouse.
+view.ClearFilter:SetNormalTexture(REMOVE_TEXTURE)
+view.ClearFilter:GetNormalTexture():SetDesaturated(true)
+view.ClearFilter:SetScript("OnEnter", function(button)
+    button:GetNormalTexture():SetDesaturated(false)
+    GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+    GameTooltip:SetText(L["All categories"])
+    GameTooltip:Show()
+end)
+view.ClearFilter:SetScript("OnLeave", function(button)
+    button:GetNormalTexture():SetDesaturated(true)
+    GameTooltip_Hide()
+end)
+view.ClearFilter:Hide()
 
 -- List -------------------------------------------------------------------------------------------
 
@@ -184,6 +204,9 @@ end
 
 -- The filter: every category, then those holding ignored items, each followed by its subcategories holding some.
 view.Filter:SetupMenu(function(_, root)
+    -- SetupMenu builds the menu at once, as this file loads: the saved data isn't there yet, nor anything to list.
+    if not ns.data then return end
+
     local function isCurrent(value)
         if value == false then return filter == nil end
         return filter ~= nil and filter.classID == value.classID and filter.subClassID == value.subClassID
@@ -224,9 +247,23 @@ function IgnoredList.Refresh()
     list.ScrollBox:SetDataProvider(CreateDataProvider(rows), ScrollBoxConstants.RetainScrollPosition)
     list.Empty:SetShown(#rows == 0)
     list.Empty:SetText(filter and L["No item of this category is ignored."] or L["No item is ignored."])
+    view.ClearFilter:SetShown(filter ~= nil)
     -- The menu is built again: the client may keep the one built when the dropdown was first shown.
     view.Filter:GenerateMenu()
 end
+
+---Shows the ignored items of one category or subcategory.
+---@param classID integer
+---@param subClassID integer? nil: the whole category
+function IgnoredList.ShowCategory(classID, subClassID)
+    filter = { classID = classID, subClassID = subClassID }
+    IgnoredList.Refresh()
+end
+
+view.ClearFilter:SetScript("OnClick", function()
+    filter = nil
+    IgnoredList.Refresh()
+end)
 
 view:HookScript("OnShow", IgnoredList.Refresh)
 

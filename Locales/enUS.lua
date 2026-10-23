@@ -40,6 +40,7 @@ L["Ignored"] = true
 L["Ignored by"] = true
 L["Ignored by %s: it is not offered at the mailbox for this character."] = true
 L["Ignored by every character: it is not offered at the mailbox."] = true
+L["Ignored items here: click to see them"] = true
 L["Inherit"] = true
 L["Item"] = true
 L["Item ID or link"] = true

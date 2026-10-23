@@ -283,6 +283,30 @@ local function rulesTreeLines()
         end
     end
 
+    -- The ignored items, and the categories and subcategories holding them, by class, then subclass.
+    ---@type table<integer, true>
+    local ignoredItems = {}
+    ---@type table<integer, table<integer, true>>
+    local ignoredIn = {}
+    for _, entry in ipairs(ns.Ignored.Entries()) do
+        ignoredItems[entry.itemID] = true
+        local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(entry.itemID)
+        if classID then
+            ignoredIn[classID] = ignoredIn[classID] or {}
+            ignoredIn[classID][subClassID] = true
+        end
+    end
+
+    ---The ignore glyph on a heading holding ignored items: a click shows them, on the Ignored tab.
+    ---@param line FlagUp.TreeLine
+    ---@param classID integer
+    ---@param subClassID integer?
+    local function markIgnored(line, classID, subClassID)
+        local held = ignoredIn[classID]
+        if not held or (subClassID ~= nil and not held[subClassID]) then return end
+        line.onIgnored = function() RulesWindow.ShowIgnored(classID, subClassID) end
+    end
+
     local lines = {}
     for _, category in ipairs(ns.Categories.All()) do
         local classID = category.classID
@@ -299,19 +323,29 @@ local function rulesTreeLines()
 
         if rules.categories[classID] or #shownSubcategories > 0 then
             local id = categoryLineID(classID)
-            lines[#lines + 1] = treeLine("category", id, #shownSubcategories > 0,
+            local categoryLine = treeLine("category", id, #shownSubcategories > 0,
                 { place = { classID = classID }, name = category.name, path = category.name })
+            markIgnored(categoryLine, classID, nil)
+            lines[#lines + 1] = categoryLine
             if not closed[id] then
                 for _, subcategory in ipairs(shownSubcategories) do
                     local subID = categoryLineID(classID, subcategory.subClassID)
                     local subItemLines = classItemLines[subcategory.subClassID]
-                    lines[#lines + 1] = treeLine("subcategory", subID, subItemLines ~= nil, {
+                    local subcategoryLine = treeLine("subcategory", subID, subItemLines ~= nil, {
                         place = { classID = classID, subClassID = subcategory.subClassID }, name = subcategory.name,
                         path = category.name .. PATH_SEPARATOR .. subcategory.name,
                     })
+                    markIgnored(subcategoryLine, classID, subcategory.subClassID)
+                    lines[#lines + 1] = subcategoryLine
                     if subItemLines and not closed[subID] then
                         table.sort(subItemLines, function(a, b) return a.name < b.name end)
-                        for _, itemLine in ipairs(subItemLines) do lines[#lines + 1] = itemLine end
+                        for _, itemLine in ipairs(subItemLines) do
+                            -- An ignored item's glyph opens the Ignored tab on its subcategory.
+                            if ignoredItems[shownLines[itemLine.id].place.itemID] then
+                                markIgnored(itemLine, classID, subcategory.subClassID)
+                            end
+                            lines[#lines + 1] = itemLine
+                        end
                     end
                 end
             end
@@ -1115,6 +1149,14 @@ end
 for _, tab in ipairs(window.Tabs) do
     tab:SetScript("OnClick", function() showTab(tab:GetID()) end)
 end
+---Shows the Ignored tab, filtered on a category or subcategory.
+---@param classID integer
+---@param subClassID integer? nil: the whole category
+function RulesWindow.ShowIgnored(classID, subClassID)
+    showTab(IGNORED_TAB)
+    ns.IgnoredList.ShowCategory(classID, subClassID)
+end
+
 -- The window opens on the Rules tab; the Ignored list, loaded after this file, starts hidden.
 PanelTemplates_SetTab(window, RULES_TAB)
 
