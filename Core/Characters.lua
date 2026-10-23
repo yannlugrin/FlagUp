@@ -13,6 +13,7 @@ ns.Characters = Characters
 ---The characters and rules of one ruleset and faction: mail only reaches a character of both.
 ---@class FlagUp.RulesetFaction
 ---@field characters table<string, FlagUp.Character> by name, "First Surname"
+---@field rules FlagUp.RuleLines? created with the first line
 
 ---The ruleset the character plays on: Normal, PvP, RP or Hardcore.
 ---@return string
@@ -33,14 +34,20 @@ local function playerName()
     return surname and (name .. " " .. surname) or name
 end
 
----Adds the character being played to the known characters of its ruleset and faction, creating their entry with the
----first one. A character typed before becomes known. Call on PLAYER_LOGIN.
-function Characters.RecordPlayer()
+---The entry of the character being played's ruleset and faction, created with its first character.
+---@return FlagUp.RulesetFaction
+function Characters.PlayerRulesetFaction()
     local key = ruleset() .. "-" .. UnitFactionGroup("player")
     local entry = ns.data.rulesetFactions[key]
     if not entry then
         entry = { characters = {} }
         ns.data.rulesetFactions[key] = entry
     end
-    entry.characters[playerName()] = { typed = false }
+    return entry
+end
+
+---Adds the character being played to the known characters of its ruleset and faction. A character typed before
+---becomes known. Call on PLAYER_LOGIN.
+function Characters.RecordPlayer()
+    Characters.PlayerRulesetFaction().characters[playerName()] = { typed = false }
 end

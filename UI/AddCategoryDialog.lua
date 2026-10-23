@@ -102,6 +102,104 @@ function dialog:ShowLines(lines)
     dialog.AddButton:SetWidth(math.max(BUTTON_WIDTH, dialog.AddButton:GetTextWidth() + 24))
 end
 
+-- Choosing a category ----------------------------------------------------------------------------
+
+---@type table<integer, true> the categories open in the list, by class ID
+local opened = {}
+---@type { classID: integer, subClassID: integer? }? the selected category or subcategory
+local selected
+
+---@param name string
+---@param filter string lower case
+---@return boolean
+local function matches(name, filter)
+    return filter == "" or name:lower():find(filter, 1, true) ~= nil
+end
+
+---@param kind "category"|"subcategory"
+---@param name string
+---@param classID integer
+---@param subClassID integer? nil: the category itself
+---@return FlagUp.TreeLine
+local function categoryLine(kind, name, classID, subClassID)
+    local added = ns.Rules.HasCategory(classID, subClassID)
+    local line = {
+        kind = kind, name = name, added = added,
+        selected = selected ~= nil and selected.classID == classID and selected.subClassID == subClassID,
+    }
+    -- A category already in the rules can't be chosen again.
+    if not added then
+        line.onClick = function()
+            selected = { classID = classID, subClassID = subClassID }
+            dialog:ShowCategories()
+        end
+    end
+    return line
+end
+
+---The categories as the list shows them: those whose name, or a subcategory's, holds the filter's text, open while
+---filtering; their subcategories under them while open.
+---@return FlagUp.TreeLine[]
+local function categoryLines()
+    local filter = dialog.Filter:GetText():lower()
+    local lines = {}
+    for _, category in ipairs(ns.Categories.All()) do
+        local classID = category.classID
+        local categoryMatches = matches(category.name, filter)
+
+        ---@type FlagUp.Subcategory[]
+        local shownSubcategories = {}
+        for _, subcategory in ipairs(category.subcategories) do
+            if categoryMatches or matches(subcategory.name, filter) then
+                shownSubcategories[#shownSubcategories + 1] = subcategory
+            end
+        end
+
+        if categoryMatches or #shownSubcategories > 0 then
+            local open = filter ~= "" or opened[classID] == true
+            local line = categoryLine("category", category.name, classID, nil)
+            if #category.subcategories > 0 then
+                line.collapsed = not open
+                line.onToggle = function()
+                    opened[classID] = not opened[classID] or nil
+                    dialog:ShowCategories()
+                end
+            end
+            lines[#lines + 1] = line
+            if open then
+                for _, subcategory in ipairs(shownSubcategories) do
+                    lines[#lines + 1] = categoryLine("subcategory", subcategory.name, classID, subcategory.subClassID)
+                end
+            end
+        end
+    end
+    return lines
+end
+
+---Shows the categories again, as the filter and the choices so far leave them.
+function dialog:ShowCategories()
+    dialog:ShowLines(categoryLines())
+end
+
+dialog.Filter:HookScript("OnTextChanged", function() dialog:ShowCategories() end)
+
+dialog.AddButton:SetScript("OnClick", function()
+    if not selected then return end
+    ns.Rules.AddCategory(selected.classID, selected.subClassID)
+    dialog:Hide()
+    ns.RulesWindow.SelectCategory(selected.classID, selected.subClassID)
+end)
+
+dialog.CancelButton:SetScript("OnClick", function() dialog:Hide() end)
+
+---Opens the dialog with every category closed and none selected.
+function AddCategoryDialog.Open()
+    opened, selected = {}, nil
+    dialog.Filter:SetText("")
+    dialog:ShowCategories()
+    dialog:Show()
+end
+
 -- Skin -------------------------------------------------------------------------------------------
 
 ns.Skin.Apply(function(S)

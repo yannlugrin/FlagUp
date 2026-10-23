@@ -20,4 +20,6 @@ read_globals = {
     "MailFrame", "GetMoneyString", "ATTACHMENTS_MAX_SEND", "GameTooltip", "GameTooltip_Hide",
     "GREEN_FONT_COLOR", "RED_FONT_COLOR",
     "C_GameRules", "UnitFullName", "UnitFactionGroup",
+    "C_Item", "Item", "RETRIEVING_ITEM_INFO", "WHITE_FONT_COLOR", "GetCursorInfo", "ClearCursor", "C_EventUtils",
+    "ChatFrameUtil", "ChatEdit_InsertLink", "hooksecurefunc",
 }

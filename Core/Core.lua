@@ -10,8 +10,11 @@ local addonName, ns = ...
 ---@field settings FlagUp.Settings
 ---@field Store FlagUp.Store
 ---@field Characters FlagUp.Characters
+---@field Categories FlagUp.Categories
+---@field Rules FlagUp.Rules
 ---@field Skin FlagUp.Skin
 ---@field TreeRow FlagUp.TreeRow
+---@field ItemDrop FlagUp.ItemDrop
 ---@field RulesWindow FlagUp.RulesWindow
 ---@field AddItemDialog FlagUp.AddItemDialog
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog

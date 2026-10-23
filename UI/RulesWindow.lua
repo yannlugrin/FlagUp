@@ -78,11 +78,13 @@ window.AddCategoryButton = CreateFrame("Button", nil, window, "UIPanelButtonTemp
 window.AddCategoryButton:SetText(L["Add category"])
 window.AddCategoryButton:SetSize(math.max(BUTTON_WIDTH, window.AddCategoryButton:GetTextWidth() + 24), BUTTON_HEIGHT)
 window.AddCategoryButton:SetPoint("TOPRIGHT", -12, TOOLBAR_TOP)
+window.AddCategoryButton:SetScript("OnClick", function() ns.AddCategoryDialog.Open() end)
 
 window.AddItemButton = CreateFrame("Button", nil, window, "UIPanelButtonTemplate")
 window.AddItemButton:SetText(L["Add item"])
 window.AddItemButton:SetSize(math.max(BUTTON_WIDTH, window.AddItemButton:GetTextWidth() + 24), BUTTON_HEIGHT)
 window.AddItemButton:SetPoint("RIGHT", window.AddCategoryButton, "LEFT", -8, 0)
+window.AddItemButton:SetScript("OnClick", function() ns.AddItemDialog.Open() end)
 
 window.SearchBox = CreateFrame("EditBox", nil, window, "SearchBoxTemplate")
 window.SearchBox:SetHeight(20)
@@ -135,6 +137,159 @@ ScrollUtil.InitScrollBoxListWithScrollBar(tree.ScrollBox, tree.ScrollBar, treeVi
 function window:ShowLines(lines)
     tree.ScrollBox:SetDataProvider(CreateDataProvider(lines), ScrollBoxConstants.RetainScrollPosition)
 end
+
+-- The tree from the rules -------------------------------------------------------------------------
+
+-- A line's ID: "c:<class ID>" for a category, "s:<class ID>:<subclass ID>" for a subcategory, "i:<item ID>" for an item.
+
+---@param classID integer
+---@param subClassID integer? nil: the category itself
+---@return string
+local function categoryLineID(classID, subClassID)
+    if subClassID == nil then return "c:" .. classID end
+    return ("s:%d:%d"):format(classID, subClassID)
+end
+
+---@param itemID integer
+---@return string
+local function itemLineID(itemID)
+    return "i:" .. itemID
+end
+
+---@type table<string, true> the lines closed this session, by ID
+local closed = {}
+---@type string? the selected line's ID
+local selectedID
+---@type table<integer, true> the items whose data the client is loading, by item ID
+local loadingItems = {}
+
+---@param kind "category"|"subcategory"|"item"
+---@param id string
+---@param name string
+---@param holdsLines boolean it has lines under it: it opens and closes
+---@return FlagUp.TreeLine
+local function treeLine(kind, id, name, holdsLines)
+    local line = { kind = kind, id = id, name = name, selected = id == selectedID }
+    if holdsLines then line.collapsed = closed[id] == true end
+    line.onClick = function()
+        selectedID = id
+        RulesWindow.Refresh()
+    end
+    line.onToggle = function()
+        closed[id] = not closed[id] or nil
+        RulesWindow.Refresh()
+    end
+    return line
+end
+
+---An item's line; while the client loads the item's name, the line says so and the tree is shown again once loaded.
+---@param itemID integer
+---@return FlagUp.TreeLine
+local function itemTreeLine(itemID)
+    local name = C_Item.GetItemNameByID(itemID)
+    if not name and not loadingItems[itemID] then
+        loadingItems[itemID] = true
+        Item:CreateFromItemID(itemID):ContinueOnItemLoad(function()
+            loadingItems[itemID] = nil
+            RulesWindow.Refresh()
+        end)
+    end
+    local line = treeLine("item", itemLineID(itemID), name or RETRIEVING_ITEM_INFO, false)
+    line.icon = C_Item.GetItemIconByID(itemID)
+    local quality = C_Item.GetItemQualityByID(itemID)
+    line.color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR
+    return line
+end
+
+---The rules' lines as the tree shows them: each category with a line of its own, of a subcategory or of an item,
+---then its subcategories and their items, in the game's order; items by name.
+---@return FlagUp.TreeLine[]
+local function rulesTreeLines()
+    local rules = ns.Rules.Lines()
+
+    -- The items' lines by class, then subclass.
+    ---@type table<integer, table<integer, FlagUp.TreeLine[]>>
+    local itemLines = {}
+    for itemID in pairs(rules.items) do
+        local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
+        if classID then
+            itemLines[classID] = itemLines[classID] or {}
+            itemLines[classID][subClassID] = itemLines[classID][subClassID] or {}
+            table.insert(itemLines[classID][subClassID], itemTreeLine(itemID))
+        end
+    end
+
+    local lines = {}
+    for _, category in ipairs(ns.Categories.All()) do
+        local classID = category.classID
+        local subcategoryRules = rules.subcategories[classID] or {}
+        local classItemLines = itemLines[classID] or {}
+
+        ---@type FlagUp.Subcategory[]
+        local shownSubcategories = {}
+        for _, subcategory in ipairs(category.subcategories) do
+            if subcategoryRules[subcategory.subClassID] or classItemLines[subcategory.subClassID] then
+                shownSubcategories[#shownSubcategories + 1] = subcategory
+            end
+        end
+
+        if rules.categories[classID] or #shownSubcategories > 0 then
+            local id = categoryLineID(classID)
+            lines[#lines + 1] = treeLine("category", id, category.name, #shownSubcategories > 0)
+            if not closed[id] then
+                for _, subcategory in ipairs(shownSubcategories) do
+                    local subID = categoryLineID(classID, subcategory.subClassID)
+                    local subItemLines = classItemLines[subcategory.subClassID]
+                    lines[#lines + 1] = treeLine("subcategory", subID, subcategory.name, subItemLines ~= nil)
+                    if subItemLines and not closed[subID] then
+                        table.sort(subItemLines, function(a, b) return a.name < b.name end)
+                        for _, itemLine in ipairs(subItemLines) do lines[#lines + 1] = itemLine end
+                    end
+                end
+            end
+        end
+    end
+    return lines
+end
+
+---Shows the rules in the tree again.
+function RulesWindow.Refresh()
+    window:ShowLines(rulesTreeLines())
+end
+
+---Selects a line, opening the lines above it, and scrolls the tree to it.
+---@param id string
+---@param above string[] the IDs of the lines above it
+local function selectLine(id, above)
+    selectedID = id
+    for _, aboveID in ipairs(above) do closed[aboveID] = nil end
+    RulesWindow.Refresh()
+    tree.ScrollBox:ScrollToElementDataByPredicate(function(line) return line.id == id end)
+end
+
+---Selects a category or subcategory line, shown open.
+---@param classID integer
+---@param subClassID integer? nil: the category itself
+function RulesWindow.SelectCategory(classID, subClassID)
+    selectLine(categoryLineID(classID, subClassID), { categoryLineID(classID) })
+end
+
+---Selects an item's line, its category and subcategory shown open.
+---@param itemID integer
+function RulesWindow.SelectItem(itemID)
+    local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
+    selectLine(itemLineID(itemID), { categoryLineID(classID), categoryLineID(classID, subClassID) })
+end
+
+window:HookScript("OnShow", RulesWindow.Refresh)
+
+-- Dropping an item -------------------------------------------------------------------------------
+
+-- An item dropped on the window is added; one already in the rules keeps its line and is only selected.
+ns.ItemDrop.Accept(window, function(itemID)
+    ns.Rules.AddItem(itemID)
+    RulesWindow.SelectItem(itemID)
+end)
 
 -- Right pane -------------------------------------------------------------------------------------
 

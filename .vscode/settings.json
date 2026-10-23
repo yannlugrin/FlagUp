@@ -30,7 +30,10 @@
         "CreateSettingsListSectionHeaderInitializer",
         "MailFrame",
         "ATTACHMENTS_MAX_SEND",
-        "GameTooltip_Hide"
+        "GameTooltip_Hide",
+        "RETRIEVING_ITEM_INFO",
+        "ChatEdit_InsertLink",
+        "ChatFrameUtil"
     ],
     "Lua.type.weakUnionCheck": true
 }

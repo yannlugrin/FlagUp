@@ -64,7 +64,7 @@ The bottom section of the right pane, under the shared rule, titled **Character 
 
 - **Item ID or link**, with **Add**: type the item's ID, or shift-click an item to paste its link.
 
-Dropping an item on the rules window does the same without the dialog.
+Dropping an item on the dialog puts its link in the field. Dropping an item on the rules window adds it without the dialog.
 
 ### 4. Add Category (Dialog)
 

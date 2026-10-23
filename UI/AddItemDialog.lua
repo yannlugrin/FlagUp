@@ -76,6 +76,62 @@ function dialog:ShowError(message)
     dialog.Error:SetText(message or "")
 end
 
+-- Adding the item --------------------------------------------------------------------------------
+
+---The item ID in the field: a link's, or a number typed alone.
+---@return integer?
+local function typedItemID()
+    local text = dialog.Input:GetText()
+    return tonumber(text:match("item:(%d+)") or text:match("^%s*(%d+)%s*$"))
+end
+
+local function addItem()
+    local itemID = typedItemID()
+    if not itemID then
+        dialog:ShowError(L["Type an item ID, or shift-click an item."])
+        return
+    end
+    if not C_Item.GetItemInfoInstant(itemID) then
+        dialog:ShowError(L["No item with this ID."])
+        return
+    end
+    if ns.Rules.HasItem(itemID) then
+        dialog:ShowError(L["This item is already in the rules."])
+        return
+    end
+    ns.Rules.AddItem(itemID)
+    dialog:Hide()
+    ns.RulesWindow.SelectItem(itemID)
+end
+
+dialog.AddButton:SetScript("OnClick", addItem)
+dialog.Input:SetScript("OnEnterPressed", addItem)
+
+-- An item dropped on the dialog goes in the field as its link, to add with Add.
+ns.ItemDrop.Accept(dialog, function(_, link)
+    dialog.Input:SetText(link)
+    dialog:ShowError(nil)
+end)
+
+-- A shift-clicked item's link goes in the field while it has the focus. Older clients name the game's function
+-- ChatEdit_InsertLink.
+local function insertLink(text)
+    if text and dialog.Input:HasFocus() then dialog.Input:SetText(text) end
+end
+if ChatFrameUtil and ChatFrameUtil.InsertLink then
+    hooksecurefunc(ChatFrameUtil, "InsertLink", insertLink)
+elseif ChatEdit_InsertLink then
+    hooksecurefunc("ChatEdit_InsertLink", insertLink)
+end
+
+---Opens the dialog with an empty field, ready to type in.
+function AddItemDialog.Open()
+    dialog.Input:SetText("")
+    dialog:ShowError(nil)
+    dialog:Show()
+    dialog.Input:SetFocus()
+end
+
 -- Skin -------------------------------------------------------------------------------------------
 
 ns.Skin.Apply(function(S)

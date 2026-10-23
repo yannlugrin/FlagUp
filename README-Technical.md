@@ -23,7 +23,9 @@ FlagUp/
 ├── Core/
 │   ├── Core.lua                   The add-on's namespace: the translated texts (ns.L), chat printing, the events, the /flagup commands
 │   ├── Store.lua                  The saved data (AceDB): defaults, ns.db, ns.data and ns.settings, set on ADDON_LOADED
-│   └── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
+│   ├── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
+│   ├── Categories.lua             The game's item categories (classes and subclasses), as the client names them
+│   └── Rules.lua                  The rule lines of the ruleset and faction being played: categories, subcategories, items
 ├── Locales/
 │   ├── enUS.lua                   English texts (AceLocale default)
 │   └── frFR.lua                   French texts
@@ -34,6 +36,7 @@ FlagUp/
 ├── UI/
 │   ├── Skin.lua                   Bridge to EllesmereUI's skinning functions, applied once it hands them over
 │   ├── TreeRow.lua                The category tree rows, shared by the rules tree and the Add category dialog
+│   ├── ItemDrop.lua               Items dropped anywhere on a frame: the rules window and the Add item dialog
 │   ├── RulesWindow.lua            The rules window: frame, toolbar, tree (ShowLines), right pane (ShowRule)
 │   ├── AddItemDialog.lua          The Add item dialog: item ID or link field, Add, the error line (ShowError)
 │   ├── AddCategoryDialog.lua      The Add category dialog: filter, the game's categories (ShowLines), Cancel, Add
@@ -46,7 +49,7 @@ FlagUp/
 
 ## Saved Data
 
-> **Built: the settings, the known characters. Proposal, not built yet: the rest.**
+> **Built: the settings, the known characters, adding rule lines (no field set yet). Proposal, not built yet: the rest.**
 
 One account-wide SavedVariables table, `FlagUpDB`, kept by AceDB (`Core/Store.lua`): the data in `global`, the settings in one "Default" profile shared by every character. AceDB saves only the values that differ from their defaults. Mail only reaches a character of the same ruleset and faction, so characters and rules are kept apart by ruleset and faction (`"PvP-Alliance"`, `"Normal-Horde"`…). A character works on its own pair's entry: all its rules, with the overrides of all its characters. The settings are account-wide. Characters are named "First Surname", the name the game gives a character on WoW: Forever, unique within a ruleset.
 

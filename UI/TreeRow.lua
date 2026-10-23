@@ -11,6 +11,7 @@ ns.TreeRow = TreeRow
 ---A line of a category tree, ready to show.
 ---@class FlagUp.TreeLine
 ---@field kind "category"|"subcategory"|"item"
+---@field id string? in the rules tree: identifies the line, to select it or keep it closed
 ---@field name string
 ---@field rule string? the rule the character being played uses, as shown in the Rule column; nil on a plain heading
 ---@field inherited boolean? the line inherits all its fields: its rule is greyed out
@@ -21,6 +22,8 @@ ns.TreeRow = TreeRow
 ---@field icon number|string? on an item
 ---@field color ColorMixin? the quality colour, on an item
 ---@field selected boolean?
+---@field onClick fun()? a click on the row
+---@field onToggle fun()? a click on its open or closed mark
 
 local NAME_LEFT = 10
 -- The rule leaves room for a category's +/- mark on the right; a recipient's mail count has none.
@@ -44,6 +47,8 @@ local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-Highlig
 ---@field Name FontString
 ---@field OverrideGlyph Texture
 ---@field Rule FontString
+---@field ToggleButton Button over the open or closed mark, while the line has one
+---@field line FlagUp.TreeLine the line shown
 
 ---@param row FlagUp.TreeRow.Row
 ---@param ruleLeft number where the Rule column starts
@@ -92,6 +97,15 @@ local function createRow(row, ruleLeft)
     row.Rule = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightLeft")
     row.Rule:SetPoint("LEFT", ruleLeft, 0)
     row.Rule:SetWordWrap(false)
+
+    row.ToggleButton = CreateFrame("Button", nil, row)
+    row.ToggleButton:SetScript("OnClick", function()
+        if row.line.onToggle then row.line.onToggle() end
+    end)
+
+    row:SetScript("OnClick", function()
+        if row.line.onClick then row.line.onClick() end
+    end)
 end
 
 ---Shows a line in a row.
@@ -100,6 +114,7 @@ end
 ---@param ruleLeft number where the Rule column starts
 function TreeRow.Init(row, line, ruleLeft)
     if not row.Name then createRow(row, ruleLeft) end
+    row.line = line
 
     local isCategory = line.kind == "category"
     row.CategoryBackground:SetShown(isCategory)
@@ -117,6 +132,10 @@ function TreeRow.Init(row, line, ruleLeft)
     if hasToggle then
         row.ToggleIcon:SetAtlas(line.collapsed and "campaign_headericon_closed" or "campaign_headericon_open", true)
     end
+    -- The mark takes its own clicks: the rest of the row selects.
+    local mark = (hasStateIcon and row.StateIcon) or (hasToggle and row.ToggleIcon) or nil
+    row.ToggleButton:SetShown(mark ~= nil and line.onToggle ~= nil)
+    if mark then row.ToggleButton:SetAllPoints(mark) end
     row.Icon:SetShown(line.kind == "item")
     if line.kind == "item" then row.Icon:SetTexture(line.icon) end
 
