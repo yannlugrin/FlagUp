@@ -2,7 +2,7 @@
 
 The frames of Flag Up: their structure, and their functional and visual description. For the code, see [README-Technical.md](README-Technical.md); for players, [README.md](README.md). The mockups are on the [design canvas](https://claude.ai/artifact/JnnxuCGggEvhecWfqwneph).
 
-Flag Up is a World of Warcraft add-on (WoW: Forever, a Classic-era world with the modern game UI). At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
+Flag Up is a World of Warcraft add-on for WoW: Forever (a Classic-era world with the modern game UI) and retail. At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
 
 ## Concepts
 
@@ -11,9 +11,9 @@ Flag Up is a World of Warcraft add-on (WoW: Forever, a Classic-era world with th
 A recipient is one of the player's characters:
 
 - **Known**: every character that logged in with Flag Up is remembered.
-- **Typed**: a name the player types ("First Surname"), for a character Flag Up hasn't seen, such as an alt on another account.
+- **Typed**: a name the player types, for a character Flag Up hasn't seen, such as an alt on another account: "First Surname" on Forever; "Name-Realm" on retail, a name alone being on the realm being played, and the realm one mail reaches.
 
-Mail only reaches a character of the same ruleset and faction, so Flag Up keeps the characters and rules of each ruleset and faction apart (PvP Alliance, PvP Horde, Normal Horde…). The character being played sees all the rules of its ruleset and faction, with the overrides of every character of it, not only its own; it never sees another ruleset or faction. A typed character belongs to the ruleset and faction of the character that typed it.
+Mail only reaches some characters, so Flag Up keeps the characters and rules of each household apart. On Forever, a household is a ruleset and faction (PvP Alliance, PvP Horde, Normal Horde…). On retail, it is a realm and the realms connected to it, both factions; mail crosses factions only between the player's own characters (known ones) of one realm, so a rule that would send across factions otherwise keeps the items, as *Don't send*. The character being played sees all the rules of its household, with the overrides of every character of it, not only its own; it never sees another household. A typed character belongs to the household of the character that typed it, and to its faction. On retail, a realm connected to the household later brings its own household along: its characters, rules and ignored items join, and on a line both have, the household being played keeps its fields.
 
 A known character that is renamed, which the game can force, keeps its rules and overrides: Flag Up recognises it at its next login.
 
@@ -21,7 +21,7 @@ Mail never goes to the character being played. Bound items, and items of an equi
 
 ### Rules
 
-The rules are shared by the player's characters of one ruleset and faction; each ruleset and faction has its own. They form a tree that follows the game's item categories:
+The rules are shared by the player's characters of one household; each household has its own. They form a tree that follows the game's item categories:
 
 - **Category** (Trade Goods), **subcategory** (Herb), **specific item** (Peacebloom) under its subcategory.
 
@@ -44,12 +44,12 @@ A rule never makes a character mail itself: for the character a rule sends to, t
 
 ### Ignored items
 
-An ignored item is never offered at the mailbox, whatever the rules say: it is not a rule, it means "don't show me this any more". An item is ignored by every character of the ruleset and faction, or by one character only. Ignored by every character, it is no longer ignored by each one apart: taking it back makes it offered to all. Only items are ignored; a whole category is a *Don't send* rule. An ignored item keeps its rule line, if it has one; the line says it is ignored. In the tree, its Rule column reads *Ignored* for the character being played. In the pane, an item ignored by every character shows only *Ignored by every character*, **Stop ignoring** and **Remove rule**, in place of its fields and overrides; an item ignored by one character shows that notice and **Stop ignoring** in place of the character's override, and that character has a tag. Dropping an ignored item on the rules window adds its line, shown ignored. A category or subcategory of the tree holding ignored items (by every character or by one) shows the ignore glyph, in grey, just left of the *Rule* column (before the override glyph, when both show); a click on it opens the Ignored tab, filtered on it. An ignored item's line shows the glyph too; a click on it opens the tab filtered on the item's subcategory.
+An ignored item is never offered at the mailbox, whatever the rules say: it is not a rule, it means "don't show me this any more". An item is ignored by every character of the household, or by one character only. Ignored by every character, it is no longer ignored by each one apart: taking it back makes it offered to all. Only items are ignored; a whole category is a *Don't send* rule. An ignored item keeps its rule line, if it has one; the line says it is ignored. In the tree, its Rule column reads *Ignored* for the character being played. In the pane, an item ignored by every character shows only *Ignored by every character*, **Stop ignoring** and **Remove rule**, in place of its fields and overrides; an item ignored by one character shows that notice and **Stop ignoring** in place of the character's override, and that character has a tag. Dropping an ignored item on the rules window adds its line, shown ignored. A category or subcategory of the tree holding ignored items (by every character or by one) shows the ignore glyph, in grey, just left of the *Rule* column (before the override glyph, when both show); a click on it opens the Ignored tab, filtered on it. An ignored item's line shows the glyph too; a click on it opens the tab filtered on the item's subcategory.
 
 ## Design Constraints
 
 - **Look**: the default game look, built from the game's own templates; with EllesmereUI installed, the same frames take its theme through its skinning API. No custom-styled widgets.
-- **Names**: characters are shown as "First Surname" (WoW: Forever has no realms).
+- **Names**: characters are shown as "First Surname" on Forever, which has no realms; on retail as "Name-Realm", without the realm being played.
 - **Item names** take their quality colour.
 
 ## Frames
@@ -116,7 +116,7 @@ Opens on **Remove rule**. Its buttons depend on the line:
 
 ### 10. Rules Window — Ignored Tab
 
-The items ignored in the ruleset and faction being played, by every character or by one.
+The items ignored in the household being played, by every character or by one.
 
 - A dropdown filters the list: *All categories*, then the categories and subcategories that hold ignored items. While a filter is set, the rows' cross in grey, red under the mouse, at its right goes back to *All categories*.
 - Columns *Item* (icon and name in its quality colour) and *Ignored by* (*All characters*, or the character's name); an item ignored by every character and by a character has a row for each. A red cross (the game's ready check cross) at the end of the row takes the item back.

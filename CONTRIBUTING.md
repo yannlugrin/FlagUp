@@ -1,6 +1,6 @@
 # Contributing to Flag Up
 
-Thanks for helping. Flag Up is an add-on for **World of Warcraft: Forever**; the other flavors are not supported.
+Thanks for helping. Flag Up is an add-on for **World of Warcraft: Forever** and **retail**; the other flavors are not supported. Each has its TOC (`FlagUp_Camelot.toc`, `FlagUp_Mainline.toc`), with the same file list.
 
 ## Reporting a problem
 
@@ -8,9 +8,9 @@ Open an issue with what you did, what you expected and what happened, and the ru
 
 ## Setting up
 
-1. Clone the repository and link it into the Forever client's `Interface\AddOns` folder under the name `FlagUp`, for example on Windows (cmd):
+1. Clone the repository and link it into the client's `Interface\AddOns` folder (Forever or retail) under the name `FlagUp`, for example on Windows (cmd):
    ```
-   mklink /J "<Forever client>\Interface\AddOns\FlagUp" "<clone>"
+   mklink /J "<client>\Interface\AddOns\FlagUp" "<clone>"
    ```
 2. Fetch the libraries. `Libs/` is not in the repository: the [BigWigs packager](https://github.com/BigWigsMods/packager) builds it from the `externals` in `.pkgmeta`. It needs `git` and `svn` (Subversion). From the repository root:
    ```
@@ -29,7 +29,7 @@ Every push runs [luacheck](https://github.com/lunarmodules/luacheck) from the re
 ## Code
 
 - Lua 5.1, the add-on namespace (`local _, ns = ...`), no new globals; functions are `local function` where they are defined.
-- Detect APIs before using them; never compare build numbers. Registering an event the client doesn't know throws on Forever.
+- Detect APIs before using them; never compare build numbers. Registering an event the client doesn't know throws on Forever. Forever is told apart by `WOW_PROJECT_ID == WOW_PROJECT_CAMELOT`: it runs the retail API, but its names and households differ.
 - Values read from the game may be secret: check `issecretvalue` before comparing, storing or concatenating them.
 - Use the game's own templates for every control, so EllesmereUI can skin them.
 - Comments say what the code does or why, in a short sentence.
