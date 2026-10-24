@@ -499,7 +499,7 @@ local function uncheckedWhy(shipment)
     local reason = ns.Mailing.UncheckReason(shipment)
     if reason == "unpriced" then return L["Unchecked: a vendor won't buy it."] end
     if reason == "cheap" then
-        local _, postage = ns.Mailing.MailsFor(#shipment.attachments)
+        local postage = ns.Mailing.Postage(#shipment.attachments)
         return L["Unchecked: worth %s, less than its postage, %s."]:format(
             GetMoneyString(ns.Mailing.Value(shipment)), GetMoneyString(postage))
     end
@@ -540,8 +540,8 @@ end
 local function mailPreview()
     ---@type table<string, FlagUp.MailGroup>
     local groupsByRecipient = {}
-    ---@type table<string, integer> by recipient: the attachments of its checked items
-    local attachments = {}
+    ---@type FlagUp.Shipment[] the checked items: what goes
+    local checkedShipments = {}
 
     for _, shipment in ipairs(ns.Mailing.Shipments(amounts)) do
         local recipient, itemID = shipment.recipient, shipment.itemID
@@ -549,7 +549,6 @@ local function mailPreview()
         if not group then
             group = { recipient = recipient, mails = 0, items = {} }
             groupsByRecipient[recipient] = group
-            attachments[recipient] = 0
         end
 
         local checked = isChecked(shipment)
@@ -581,17 +580,19 @@ local function mailPreview()
             uncheckedWhy = uncheckedWhy(shipment),
             onIgnore = function() askToIgnore(itemID) end,
         })
-        if checked then attachments[recipient] = attachments[recipient] + #shipment.attachments end
+        if checked then checkedShipments[#checkedShipments + 1] = shipment end
     end
 
-    local preview = { groups = {}, mails = 0, postage = 0 }
-    for recipient, group in pairs(groupsByRecipient) do
-        local mails, postage = ns.Mailing.MailsFor(attachments[recipient])
-        group.mails = mails
+    -- The mails, as they will go.
+    local parcels = ns.Mailing.Parcels(checkedShipments)
+    local preview = { groups = {}, mails = #parcels, postage = 0 }
+    for _, parcel in ipairs(parcels) do
+        groupsByRecipient[parcel.recipient].mails = groupsByRecipient[parcel.recipient].mails + 1
+        preview.postage = preview.postage + ns.Mailing.Postage(#parcel.attachments)
+    end
+    for _, group in pairs(groupsByRecipient) do
         table.sort(group.items, function(a, b) return a.name < b.name end)
         preview.groups[#preview.groups + 1] = group
-        preview.mails = preview.mails + mails
-        preview.postage = preview.postage + postage
     end
     table.sort(preview.groups, function(a, b) return a.recipient < b.recipient end)
     return preview

@@ -105,6 +105,7 @@ With automatic sending on (or the send key held while it is off), the panel open
 - Each mail with its recipient and items, marked *Sent*, *Sending…*, *Waiting* or *Failed*. A failed mail shows the game's error in red under it, and sending goes on with the next mail.
 - At the bottom: how many are sent and failed, and **Stop**; once the sending is over (finished or stopped), **Back** returns to the preview, with what is left in the bags.
 - Every mail's subject is "Flag Up parcel".
+- Part stacks (a Keep or a count leaving part of a stack): the game attaches only whole stacks, so each part is first split into a free bag slot, where it stays until its mail is sent. A mail takes as many part stacks as there are free slots, and whole stacks with them; each mail sent frees the slots of its whole stacks. Part stacks with no free slot wait for the mails after, every recipient's; with no slot freed by then, their mail fails: *No free bag slot to split a stack.*
 
 ### 9. Remove Rule (Dialog)
 

@@ -23,7 +23,7 @@ local LAST_BAG = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
 ---A stack to attach to a mail, whole or a part split from it.
 ---@class FlagUp.Attachment: FlagUp.BagStack
 ---@field itemID integer
----@field split boolean only `count` of the stack goes: it is split onto the cursor, then attached
+---@field split boolean only `count` of the stack goes: it is split into a free bag slot, then attached from there
 
 ---An item the rules send, with how much and from which stacks.
 ---@class FlagUp.Shipment
@@ -170,12 +170,11 @@ function Mailing.Value(shipment)
     return shipment.sellPrice * shipment.count
 end
 
----How many mails a number of attachments takes, and their postage in copper.
+---The postage of a number of attachments, in copper.
 ---@param attachments integer
----@return integer mails
----@return integer postage
-function Mailing.MailsFor(attachments)
-    return math.ceil(attachments / ATTACHMENTS_MAX_SEND), attachments * POSTAGE_PER_ATTACHMENT
+---@return integer
+function Mailing.Postage(attachments)
+    return attachments * POSTAGE_PER_ATTACHMENT
 end
 
 -- Sending ----------------------------------------------------------------------------------------
@@ -195,36 +194,84 @@ local ANSWER_TIMEOUT = 15
 -- mail answered (it resets its send mail on the same event), and ignores a mail sent at once.
 local NEXT_MAIL_DELAY = 1
 
----The mails that carry shipments: by recipient, at most ATTACHMENTS_MAX_SEND attachments each, items in the order
----given.
+---The free slots of the bags that take any item: the backpack and the plain bags.
+---@return integer
+local function freeSlotCount()
+    local count = 0
+    for bag = BACKPACK_CONTAINER, NUM_BAG_SLOTS do
+        local free, family = C_Container.GetContainerNumFreeSlots(bag)
+        if family == 0 then count = count + free end
+    end
+    return count
+end
+
+---A free slot of a bag that takes any item.
+---@return integer? bag nil: none
+---@return integer? slot
+local function freeSlot()
+    for bag = BACKPACK_CONTAINER, NUM_BAG_SLOTS do
+        local _, family = C_Container.GetContainerNumFreeSlots(bag)
+        if family == 0 then
+            for slot = 1, C_Container.GetContainerNumSlots(bag) do
+                if not C_Container.GetContainerItemInfo(bag, slot) then return bag, slot end
+            end
+        end
+    end
+    return nil, nil
+end
+
+---The mails that carry shipments, at most ATTACHMENTS_MAX_SEND attachments each, by recipient, items in the order
+---given. A part stack is split into a free slot until its mail is sent, so a mail takes as many part stacks as there
+---are free slots, and whole stacks with them; a sent mail frees the slots of its whole stacks. Part stacks with no free
+---slot wait for the mails after, every recipient's; with none freed by then, their mails fail.
 ---@param shipments FlagUp.Shipment[]
 ---@return FlagUp.Parcel[]
 function Mailing.Parcels(shipments)
-    ---@type table<string, FlagUp.Attachment[]>
-    local byRecipient = {}
+    ---@type table<string, FlagUp.Attachment[]> by recipient
+    local wholeStacks, partStacks = {}, {}
     local recipients = {}
     for _, shipment in ipairs(shipments) do
-        if not byRecipient[shipment.recipient] then
-            byRecipient[shipment.recipient] = {}
-            recipients[#recipients + 1] = shipment.recipient
+        local recipient = shipment.recipient
+        if not wholeStacks[recipient] then
+            wholeStacks[recipient], partStacks[recipient] = {}, {}
+            recipients[#recipients + 1] = recipient
         end
         for _, attachment in ipairs(shipment.attachments) do
-            table.insert(byRecipient[shipment.recipient], attachment)
+            table.insert(attachment.split and partStacks[recipient] or wholeStacks[recipient], attachment)
         end
     end
     table.sort(recipients)
 
     local parcels = {}
-    for _, recipient in ipairs(recipients) do
-        local attachments = byRecipient[recipient]
-        local parts = Mailing.MailsFor(#attachments)
-        for part = 1, parts do
+    local free = freeSlotCount()
+    ---A recipient's mails: each takes as many part stacks as there are free slots, then whole stacks up to the limit.
+    ---With `force`, part stacks go even with no free slot (their mails fail). The part stacks left wait.
+    ---@param recipient string
+    ---@param force boolean?
+    local function addMails(recipient, force)
+        local wholes, parts = wholeStacks[recipient], partStacks[recipient]
+        while #wholes > 0 or (#parts > 0 and (free > 0 or force)) do
             local parcel = { recipient = recipient, attachments = {}, status = "waiting" }
-            if parts > 1 then parcel.part, parcel.parts = part, parts end
-            for index = (part - 1) * ATTACHMENTS_MAX_SEND + 1, math.min(part * ATTACHMENTS_MAX_SEND, #attachments) do
-                parcel.attachments[#parcel.attachments + 1] = attachments[index]
-            end
+            local partCount = math.min(#parts, ATTACHMENTS_MAX_SEND, force and ATTACHMENTS_MAX_SEND or free)
+            for _ = 1, partCount do table.insert(parcel.attachments, table.remove(parts, 1)) end
+            local wholeCount = math.min(#wholes, ATTACHMENTS_MAX_SEND - partCount)
+            for _ = 1, wholeCount do table.insert(parcel.attachments, table.remove(wholes, 1)) end
+            free = free + wholeCount
             parcels[#parcels + 1] = parcel
+        end
+    end
+
+    for _, recipient in ipairs(recipients) do addMails(recipient) end
+    -- The part stacks that waited, once every whole stack is sent; with no free slot then, their mails fail.
+    for _, recipient in ipairs(recipients) do addMails(recipient, free == 0) end
+
+    -- With several mails to a recipient: which one each is, in sending order.
+    local counts, seen = {}, {}
+    for _, parcel in ipairs(parcels) do counts[parcel.recipient] = (counts[parcel.recipient] or 0) + 1 end
+    for _, parcel in ipairs(parcels) do
+        if counts[parcel.recipient] > 1 then
+            seen[parcel.recipient] = (seen[parcel.recipient] or 0) + 1
+            parcel.part, parcel.parts = seen[parcel.recipient], counts[parcel.recipient]
         end
     end
     return parcels
@@ -243,28 +290,73 @@ local sending
 
 local events = CreateFrame("Frame")
 
----Puts a mail's stacks into the game's send mail: whole stacks picked up, part stacks split onto the cursor.
+-- How often to look whether a part stack has reached its free slot, and for how long, in seconds.
+local SPLIT_CHECK_INTERVAL, SPLIT_TIMEOUT = 0.1, 5
+
+---Splits a part stack into a free bag slot: the game attaches a whole stack from the cursor, never a part of it.
+---Calls `done` once the part has landed there, unlocked, with the whole stack it makes; or with why it can't.
+---@param attachment FlagUp.Attachment
+---@param done fun(stack: FlagUp.Attachment?, error: string?)
+local function splitIntoFreeSlot(attachment, done)
+    local bag, slot = freeSlot()
+    if not bag then return done(nil, L["No free bag slot to split a stack."]) end
+    C_Container.SplitContainerItem(attachment.bag, attachment.slot, attachment.count)
+    C_Container.PickupContainerItem(bag, slot)
+    if CursorHasItem() then
+        ClearCursor()
+        return done(nil, L["A stack could not be split."])
+    end
+
+    local waited = 0
+    local function check()
+        local info = C_Container.GetContainerItemInfo(bag, slot)
+        if info and info.itemID == attachment.itemID and info.stackCount == attachment.count and not info.isLocked then
+            return done({ itemID = attachment.itemID, bag = bag, slot = slot, count = attachment.count, split = false })
+        end
+        waited = waited + SPLIT_CHECK_INTERVAL
+        if waited >= SPLIT_TIMEOUT then return done(nil, L["A stack could not be split."]) end
+        C_Timer.After(SPLIT_CHECK_INTERVAL, check)
+    end
+    check()
+end
+
+---Puts a mail's stacks into the game's send mail: part stacks are split into free slots first, then every stack is
+---picked up whole and attached. Calls `done` once attached, or with why the mail can't go.
 ---@param parcel FlagUp.Parcel
----@return string? error why the mail can't go
-local function attach(parcel)
+---@param done fun(error: string?)
+local function attach(parcel, done)
     ClearSendMail()
-    for index, attachment in ipairs(parcel.attachments) do
+    for _, attachment in ipairs(parcel.attachments) do
         local info = C_Container.GetContainerItemInfo(attachment.bag, attachment.slot)
         if not info or info.itemID ~= attachment.itemID or info.stackCount < attachment.count then
-            return L["An item to send has moved in the bags."]
-        end
-        if attachment.split then
-            C_Container.SplitContainerItem(attachment.bag, attachment.slot, attachment.count)
-        else
-            C_Container.PickupContainerItem(attachment.bag, attachment.slot)
-        end
-        ClickSendMailItemButton(index)
-        if CursorHasItem() then
-            ClearCursor()
-            return L["An item could not be attached."]
+            return done(L["An item to send has moved in the bags."])
         end
     end
-    return nil
+
+    local function attachAll()
+        for index, attachment in ipairs(parcel.attachments) do
+            C_Container.PickupContainerItem(attachment.bag, attachment.slot)
+            ClickSendMailItemButton(index)
+            if CursorHasItem() then
+                ClearCursor()
+                return done(L["An item could not be attached."])
+            end
+        end
+        done(nil)
+    end
+
+    -- The part stacks one after the other: each becomes the whole stack it makes in its free slot.
+    local function splitFrom(index)
+        local attachment = parcel.attachments[index]
+        if not attachment then return attachAll() end
+        if not attachment.split then return splitFrom(index + 1) end
+        splitIntoFreeSlot(attachment, function(stack, error)
+            if not stack then return done(error) end
+            parcel.attachments[index] = stack
+            splitFrom(index + 1)
+        end)
+    end
+    splitFrom(1)
 end
 
 ---The next mail to send: the first one not answered yet. It may already show as being sent, while the queue waits
@@ -288,34 +380,33 @@ local function finishSending()
     onChange()
 end
 
----Starts the mails waiting, one after the other, until one is sent to the server: its answer starts the next one.
----A mail that can't be put together fails at once, and the next one starts.
+---Starts the next mail waiting, once its stacks are attached, and sends it to the server: its answer starts the next
+---one. A mail that can't be put together fails at once, and the next one starts.
 local function startNextMail()
     local parcel = nextToSend()
-    while parcel and not sending.stopping do
-        parcel.status = "sending"
-        sending.onChange()
-        local error = attach(parcel)
-        if not error then
-            sending.current, sending.lastError = parcel, nil
-            SendMail(parcel.recipient, L["Flag Up parcel"], "")
-            C_Timer.After(ANSWER_TIMEOUT, function()
-                if sending and sending.current == parcel then
-                    sending.current = nil
-                    parcel.status, parcel.error = "failed", L["No answer from the server."]
-                    ClearSendMail()
-                    sending.onChange()
-                    startNextMail()
-                end
-            end)
-            return
+    if not parcel or sending.stopping then return finishSending() end
+    parcel.status = "sending"
+    sending.onChange()
+    attach(parcel, function(error)
+        if not sending then return end
+        if error then
+            parcel.status, parcel.error = "failed", error
+            ClearSendMail()
+            sending.onChange()
+            return startNextMail()
         end
-        parcel.status, parcel.error = "failed", error
-        ClearSendMail()
-        sending.onChange()
-        parcel = nextToSend()
-    end
-    finishSending()
+        sending.current, sending.lastError = parcel, nil
+        SendMail(parcel.recipient, L["Flag Up parcel"], "")
+        C_Timer.After(ANSWER_TIMEOUT, function()
+            if sending and sending.current == parcel then
+                sending.current = nil
+                parcel.status, parcel.error = "failed", L["No answer from the server."]
+                ClearSendMail()
+                sending.onChange()
+                startNextMail()
+            end
+        end)
+    end)
 end
 
 ---The server's answer to the current mail: it is sent, or failed with the game's error; the next one starts.

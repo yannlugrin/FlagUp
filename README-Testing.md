@@ -11,12 +11,19 @@ Manual tests in the Forever and retail clients, for what can't be checked offlin
 
 - Mail to a character of the same realm, shown without its realm, and of a connected realm, shown as "Name-Realm".
 - Mail to the player's own character of the other faction, on the same realm.
+
+## Part stacks (both flavors)
+
+- A Keep leaving part of a stack: the part is split into a free slot, and only it arrives; the rest stays in the bags.
+- A whole stack and a part stack for one recipient, one free slot: one mail.
+- Bags full: the whole-stack mails free their slots, and the part stacks follow in as many mails as those slots allow.
+- Bags full and only part stacks to send: the mail fails with *No free bag slot to split a stack.*
 - A typed name on a realm that isn't connected is refused with *Mail can't reach this realm.*; a typed realm with spaces or in lower case takes the game's spelling.
 - A realm connected later (or a character of a connected realm seen first on its own): at login, its household joins, rules and ignored items with it.
 
 ## Tested in 1.0.0
 
 - Sending to a "First Surname" name with `SendMail`.
-- Attaching several bag slots in a row, and a part of a stack after splitting it.
+- Attaching several bag slots in a row, and a part of a stack split onto the cursor (no longer done: retail attaches the whole stack that way).
 - Sending as soon as the mailbox opens.
 - The postage the game takes matches the mailbox panel's (30 copper per attachment).

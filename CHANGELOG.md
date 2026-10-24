@@ -9,6 +9,10 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 - Mailbox panel: change how many of an item go, this time only; the count's tooltip tells how many are in the bags.
 - Retail: your characters of a realm and its connected realms share their rules and mail each other, the other faction too on your own realm; names show without the realm you play.
 
+### Fixed
+
+- Part of a stack (a Keep, or a count set by hand) is sent alone; retail mailed the whole stack.
+
 ## [1.0.0] - 2026-10-23
 
 ### Added
