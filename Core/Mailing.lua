@@ -29,7 +29,9 @@ local LAST_BAG = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
 ---@class FlagUp.Shipment
 ---@field itemID integer
 ---@field recipient string
----@field count integer
+---@field count integer how many go: as the rules say, or as set by hand
+---@field ruleCount integer how many the rules send
+---@field bagCount integer how many the bags hold
 ---@field attachments FlagUp.Attachment[]
 ---@field sellPrice integer what a vendor pays for one, in copper; 0: a vendor won't buy it
 
@@ -118,9 +120,11 @@ local function attachmentsFor(itemID, stacks, amount)
     return attachments
 end
 
----What the rules send from the bags, for the character being played, item by item; ignored items are left out.
+---What the rules send from the bags, for the character being played, item by item; ignored items are left out. An
+---amount set by hand replaces the rules' (Keep and Full stacks only included), up to what the bags hold.
+---@param amounts table<integer, integer>? by item ID: how many go, set by hand
 ---@return FlagUp.Shipment[]
-function Mailing.Shipments()
+function Mailing.Shipments(amounts)
     local character = ns.Characters.PlayerName()
     local shipments = {}
     for itemID, stacks in pairs(bagStacks()) do
@@ -132,10 +136,12 @@ function Mailing.Shipments()
             if recipient and qualityPasses(place, character, quality) then
                 local total = 0
                 for _, stack in ipairs(stacks) do total = total + stack.count end
-                local amount = amountToSend(place, character, total, stackSize)
+                local ruleAmount = amountToSend(place, character, total, stackSize)
+                local amount = ruleAmount
+                if amounts and amounts[itemID] then amount = math.min(amounts[itemID], total) end
                 if amount > 0 then
                     shipments[#shipments + 1] = {
-                        itemID = itemID, recipient = recipient, count = amount,
+                        itemID = itemID, recipient = recipient, count = amount, ruleCount = ruleAmount, bagCount = total,
                         attachments = attachmentsFor(itemID, stacks, amount), sellPrice = sellPrice or 0,
                     }
                 end

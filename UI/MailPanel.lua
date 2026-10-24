@@ -16,6 +16,9 @@ ns.MailPanel = MailPanel
 ---@field icon number|string
 ---@field color ColorMixin the quality colour
 ---@field count integer how many are sent
+---@field ruleCount integer how many the rules send; another count was set by hand
+---@field bagCount integer how many the bags hold
+---@field onAmount fun(count: integer?)? a count typed in its box; nil: the box emptied, back to the rules' count
 ---@field checked boolean unchecked: it stays in the bags this time
 ---@field onToggle fun()? a click on its checkbox
 ---@field uncheckedWhy string? unchecked by the settings, not by hand: why, for its checkbox's tooltip
@@ -61,6 +64,7 @@ local ITEM_HEIGHT = 24
 local CHECKBOX_SIZE = 26
 local ICON_SIZE = 18
 local SKINNED_CHECKBOX_SIZE = 16
+local AMOUNT_WIDTH, AMOUNT_HEIGHT = 44, 20
 local IGNORE_BUTTON_SIZE = 16
 -- The game's loot Pass button, as the Ignore button.
 local IGNORE_TEXTURE, IGNORE_TEXTURE_DOWN = "Interface\\Buttons\\UI-GroupLoot-Pass-Up", "Interface\\Buttons\\UI-GroupLoot-Pass-Down"
@@ -120,7 +124,7 @@ list.Empty:SetText(L["Nothing to send."])
 ---@field Icon Texture
 ---@field IconHover Frame over the icon: the item's tooltip
 ---@field Name FontString
----@field Count FontString
+---@field Amount EditBox how many go, to change by hand
 ---@field IgnoreButton Button
 ---@field item FlagUp.MailItem the item shown
 
@@ -171,17 +175,50 @@ local function createItemRow(row)
     end)
     row.IgnoreButton:SetScript("OnLeave", GameTooltip_Hide)
 
-    row.Count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightRight")
-    row.Count:SetPoint("RIGHT", row.IgnoreButton, "LEFT", -6, 0)
+    -- How many go: typed with Enter or on leaving the box; Escape puts the count back.
+    row.Amount = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
+    row.Amount:SetSize(AMOUNT_WIDTH, AMOUNT_HEIGHT)
+    row.Amount:SetPoint("RIGHT", row.IgnoreButton, "LEFT", -6, 0)
+    row.Amount:SetNumeric(true)
+    row.Amount:SetAutoFocus(false)
+    row.Amount:SetJustifyH("RIGHT")
+    row.Amount:SetScript("OnEnterPressed", function(box) box:ClearFocus() end)
+    row.Amount:SetScript("OnEscapePressed", function(box)
+        box:SetText(tostring(row.item.count))
+        box:ClearFocus()
+    end)
+    row.Amount:SetScript("OnEditFocusLost", function(box)
+        if not row.item.onAmount then return end
+        local count = tonumber(box:GetText())
+        if count == nil or count ~= row.item.count then row.item.onAmount(count) end
+    end)
+    -- How many the bags hold, and how many the rules keep, if any; set by hand: how many the rules would send.
+    row.Amount:SetScript("OnEnter", function(box)
+        local item = row.item
+        local kept = item.bagCount - item.ruleCount
+        local text
+        if item.count == item.ruleCount and kept == 0 then
+            text = L["%d in the bags."]:format(item.bagCount)
+        elseif item.count == item.ruleCount then
+            text = L["%d in the bags, the rules keep %d."]:format(item.bagCount, kept)
+        else
+            text = L["%d in the bags, the rules send %d."]:format(item.bagCount, item.ruleCount)
+        end
+        GameTooltip:SetOwner(box, "ANCHOR_RIGHT")
+        GameTooltip:SetText(text, HIGHLIGHT_FONT_COLOR:GetRGB())
+        GameTooltip:Show()
+    end)
+    row.Amount:SetScript("OnLeave", GameTooltip_Hide)
 
     row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLeft")
     row.Name:SetPoint("LEFT", row.Icon, "RIGHT", 6, 0)
-    row.Name:SetPoint("RIGHT", row.Count, "LEFT", -8, 0)
+    row.Name:SetPoint("RIGHT", row.Amount, "LEFT", -8, 0)
     row.Name:SetWordWrap(false)
 
     ns.Skin.Apply(function(S)
         S.Checkbox(row.Checkbox)
         row.Checkbox:SetSize(SKINNED_CHECKBOX_SIZE, SKINNED_CHECKBOX_SIZE)
+        S.EditBox(row.Amount)
     end)
 end
 
@@ -196,12 +233,15 @@ local function initItemRow(row, item)
     row.Icon:SetDesaturated(not item.checked)
     row.Name:SetText(item.name)
     row.Name:SetTextColor(item.color:GetRGB())
-    row.Count:SetText(tostring(item.count))
+    -- A count set by hand shows in gold.
+    if not row.Amount:HasFocus() then row.Amount:SetText(tostring(item.count)) end
+    local countColor = item.count ~= item.ruleCount and NORMAL_FONT_COLOR or HIGHLIGHT_FONT_COLOR
+    row.Amount:SetTextColor(countColor:GetRGB())
     -- An unchecked item stays in the bags: its row is dimmed.
     local alpha = item.checked and 1 or DIMMED_ALPHA
     row.Icon:SetAlpha(alpha)
     row.Name:SetAlpha(alpha)
-    row.Count:SetAlpha(alpha)
+    row.Amount:SetAlpha(alpha)
 end
 
 -- The list holds the recipients' headers, as tree category rows, and their items. The scroll box reuses rows by
@@ -439,6 +479,8 @@ end
 
 ---@type table<integer, boolean> the items checked or unchecked by hand during this visit to the mailbox, by item ID
 local choices = {}
+---@type table<integer, integer> the counts set by hand during this visit to the mailbox, by item ID
+local amounts = {}
 
 ---Whether an item goes: as checked or unchecked by hand this visit, else as the settings judge its worth.
 ---@param shipment FlagUp.Shipment
@@ -501,7 +543,7 @@ local function mailPreview()
     ---@type table<string, integer> by recipient: the attachments of its checked items
     local attachments = {}
 
-    for _, shipment in ipairs(ns.Mailing.Shipments()) do
+    for _, shipment in ipairs(ns.Mailing.Shipments(amounts)) do
         local recipient, itemID = shipment.recipient, shipment.itemID
         local group = groupsByRecipient[recipient]
         if not group then
@@ -518,6 +560,19 @@ local function mailPreview()
             icon = C_Item.GetItemIconByID(itemID),
             color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR,
             count = shipment.count,
+            ruleCount = shipment.ruleCount,
+            bagCount = shipment.bagCount,
+            -- A count typed goes, checked; 0 unchecks the item; an emptied box goes back to the rules' count.
+            onAmount = function(count)
+                if count == nil then
+                    amounts[itemID] = nil
+                elseif count <= 0 then
+                    amounts[itemID], choices[itemID] = nil, false
+                else
+                    amounts[itemID], choices[itemID] = count, true
+                end
+                MailPanel.Refresh()
+            end,
             checked = checked,
             onToggle = function()
                 choices[itemID] = not checked
@@ -567,7 +622,7 @@ end
 ---Sends the checked items, mail by mail; the sending view follows each mail.
 local function startSending()
     local shipments = {}
-    for _, shipment in ipairs(ns.Mailing.Shipments()) do
+    for _, shipment in ipairs(ns.Mailing.Shipments(amounts)) do
         if isChecked(shipment) then shipments[#shipments + 1] = shipment end
     end
     table.sort(shipments, function(a, b) return a.itemID < b.itemID end)
@@ -606,7 +661,7 @@ function MailPanel.Open()
     panel:ClearAllPoints()
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", MAILBOX_GAP, 0)
     panel:SetPoint("BOTTOMLEFT", MailFrame, "BOTTOMRIGHT", MAILBOX_GAP, 0)
-    choices = {}
+    choices, amounts = {}, {}
     local preview = mailPreview()
     panel:ShowPreview(preview)
     panel:Show()

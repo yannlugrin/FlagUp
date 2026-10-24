@@ -95,7 +95,7 @@ The usual add-on minimap button, the one most add-ons show (LibDBIcon). Left-cli
 
 A panel attached to the right of the mailbox, open with it.
 
-- The items to send, grouped by recipient, each group with its number of mails. Each item has a checkbox: unchecked, it stays in the bags this time only. At the end of its row, an **Ignore** button (the game's loot Pass glyph) opens the game's popup: **All characters**, **Only <character being played>**, **Cancel**; the item leaves the list at once.
+- The items to send, grouped by recipient, each group with its number of mails. Each item has a checkbox: unchecked, it stays in the bags this time only. Its count is a number box: the count typed goes this time only, up to what the bags hold, in place of the rules' (Keep and Full stacks only no longer apply to it), and shows in gold; its tooltip gives how many the bags hold, and how many the rules keep (when they keep some), or send when set by hand; 0 unchecks the item; emptied, it goes back to the rules' count. At the end of its row, an **Ignore** button (the game's loot Pass glyph) opens the game's popup: **All characters**, **Only <character being played>**, **Cancel**; the item leaves the list at once.
 - At the bottom: the number of mails, the postage, and **Send**.
 
 With automatic sending on (or the send key held while it is off), the panel opens on frame 8 instead.

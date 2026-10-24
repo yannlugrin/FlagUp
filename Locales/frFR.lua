@@ -1,6 +1,9 @@
 local L = LibStub("AceLocale-3.0"):NewLocale("FlagUp", "frFR")
 if not L then return end
 
+L["%d in the bags, the rules keep %d."] = "%d dans les sacs, les règles en gardent %d."
+L["%d in the bags, the rules send %d."] = "%d dans les sacs, les règles en envoient %d."
+L["%d in the bags."] = "%d dans les sacs."
 L["%d mails"] = "%d courriers"
 L["%d of %d sent"] = "%d sur %d envoyés"
 L["%d of %d sent, %d failed"] = "%d sur %d envoyés, %d en échec"
