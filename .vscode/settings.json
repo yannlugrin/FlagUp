@@ -43,7 +43,9 @@
         "BACK",
         "PanelTemplates_SetNumTabs",
         "PanelTemplates_SetTab",
-        "PanelTemplates_TabResize"
+        "PanelTemplates_TabResize",
+        "WOW_PROJECT_CAMELOT",
+        "C_AutoComplete"
     ],
     "Lua.type.weakUnionCheck": true
 }

@@ -26,9 +26,9 @@ FlagUp/
 ├── Core/
 │   ├── Core.lua                   The add-on's namespace: the translated texts (ns.L), chat printing, the events, the /flagup commands
 │   ├── Store.lua                  The saved data (AceDB): defaults, ns.db, ns.data and ns.settings, set on ADDON_LOADED
-│   ├── Characters.lua             The known characters: the one being played recorded in its ruleset and faction at login
+│   ├── Characters.lua             The known characters: the one being played recorded in its household at login
 │   ├── Categories.lua             The game's item categories (classes and subclasses), as the client names them
-│   ├── Rules.lua                  The rule lines of the ruleset and faction being played: categories, subcategories, items
+│   ├── Rules.lua                  The rule lines of the household being played: categories, subcategories, items
 │   ├── Ignored.lua                The items never offered at the mailbox: ignored by every character, or by one
 │   └── Mailing.lua                What the bags hold that the rules send: amounts, the stacks to attach, mails and postage
 ├── Locales/
@@ -57,6 +57,8 @@ FlagUp/
 ## Saved Data
 
 One account-wide SavedVariables table, `FlagUpDB`, kept by AceDB (`Core/Store.lua`): the data in `global`, the settings in one "Default" profile shared by every character. AceDB saves only the values that differ from their defaults. Mail only reaches a character of the same ruleset and faction, so characters and rules are kept apart by ruleset and faction (`"PvP-Alliance"`, `"Normal-Horde"`…). A character works on its own pair's entry: all its rules, with the overrides of all its characters. The settings are account-wide. Characters are named "First Surname", the name the game gives a character on WoW: Forever, unique within a ruleset.
+
+Outside Forever, characters are named "Name-Realm" (the realm normalized, without spaces or "-") and shown without the realm being played. Mail reaches a realm and the realms connected to it, so the households are kept in `realmHouseholds`, by those realms joined in order (`"Medivh-Suramar"`), both factions together; each character saves its faction (a typed one, the faction of the character that typed it), since mail crosses factions only between known characters of one realm. At login, a household saved under some of the realms being played (realms connected since) joins the household being played: its characters are added, and its lines and ignored items too; on a line both have, the household being played keeps its fields, the other's filling those it leaves unset.
 
 ```lua
 FlagUpDB = {

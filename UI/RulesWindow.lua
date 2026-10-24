@@ -185,7 +185,7 @@ local PATH_SEPARATOR = " › "
 ---@param sendTo string|false
 ---@return string
 local function ruleText(sendTo)
-    return sendTo and L["Send to %s"]:format(sendTo) or L["Don't send"]
+    return sendTo and L["Send to %s"]:format(ns.Characters.ShownName(sendTo)) or L["Don't send"]
 end
 
 ---What a character does with a line, as the Rule column shows it: the recipient, then whether only full stacks go,
@@ -196,7 +196,7 @@ end
 local function treeRuleText(place, character)
     local sendTo = ns.Rules.Value(place, "sendTo", character)
     if not sendTo then return L["Don't send"] end
-    local text = sendTo
+    local text = ns.Characters.ShownName(sendTo)
     if ns.Rules.Value(place, "fullStacksOnly", character) then text = L["%s, full stacks"]:format(text) end
     if ns.Rules.HasField(place, "keep") then
         local keep = ns.Rules.Value(place, "keep", character)
@@ -897,7 +897,7 @@ function window:ShowRule(detail)
     local tags = {}
     for index, name in ipairs(overrides.characters) do
         local tag = characterTag(index)
-        tag:SetText(name)
+        tag:SetText(ns.Characters.ShownName(name))
         tag:SetWidth(tag:GetTextWidth() + 24)
         if name == overrides.selected then
             tag:LockHighlight()
@@ -917,7 +917,7 @@ function window:ShowRule(detail)
     pane.AddOverrideButton:SetEnabled(#overrides.addable > 0)
     pane.AddOverrideButton:SetupMenu(function(_, rootDescription)
         for _, name in ipairs(overrides.addable) do
-            rootDescription:CreateButton(name, function() overrides.onSelectCharacter(name) end)
+            rootDescription:CreateButton(ns.Characters.ShownName(name), function() overrides.onSelectCharacter(name) end)
         end
     end)
 
@@ -927,7 +927,7 @@ function window:ShowRule(detail)
     pane.OverrideStopIgnoringButton:SetShown(ignored)
     if ignored then
         pane.OverrideIgnoredNotice:SetText(L["Ignored by %s: it is not offered at the mailbox for this character."]
-            :format(overrides.selected))
+            :format(ns.Characters.ShownName(overrides.selected)))
         hideFieldSet(pane.Override)
         pane.RemoveOverrideButton:Hide()
         return
@@ -995,7 +995,7 @@ local function askToRemove(place)
     local shown = shownLines[selectedID]
     local overrides = (ns.Rules.LineAt(place) or {}).overrides
     local names = {}
-    for name in pairs(overrides or {}) do names[#names + 1] = name end
+    for name in pairs(overrides or {}) do names[#names + 1] = ns.Characters.ShownName(name) end
     table.sort(names)
 
     local popup = StaticPopupDialogs.FLAGUP_REMOVE_RULE
@@ -1040,7 +1040,9 @@ StaticPopupDialogs.FLAGUP_UNCHECK_LAST_FIELD = {
 local function askAfterLastField(place, field)
     local shown = shownLines[selectedID]
     local names = {}
-    for name in pairs((ns.Rules.LineAt(place) or {}).overrides or {}) do names[#names + 1] = name end
+    for name in pairs((ns.Rules.LineAt(place) or {}).overrides or {}) do
+        names[#names + 1] = ns.Characters.ShownName(name)
+    end
     table.sort(names)
 
     local text = L["%s no longer sets a field of its own. Remove the line, or keep it with every field inherited?"]
@@ -1100,8 +1102,8 @@ local function wireFieldSet(set)
         local function choose(value) setField(place, "sendTo", value, character) end
 
         root:CreateRadio(L["Don't send"], isCurrent, choose, false)
-        for _, name in ipairs(ns.Characters.Names(character)) do
-            root:CreateRadio(name, isCurrent, choose, name)
+        for _, name in ipairs(ns.Characters.Recipients(character)) do
+            root:CreateRadio(ns.Characters.ShownName(name), isCurrent, choose, name)
         end
         root:CreateButton(L["Other character…"], function()
             ns.CharacterNameDialog.Open(character, function(name)

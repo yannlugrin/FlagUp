@@ -1,7 +1,7 @@
 local _, ns = ...
 ---@cast ns FlagUp.Namespace
 
----The rule lines of the character being played's ruleset and faction.
+---The rule lines of the character being played's household.
 ---@class FlagUp.Rules
 local Rules = {}
 ns.Rules = Rules
@@ -14,7 +14,7 @@ ns.Rules = Rules
 ---@field fullStacksOnly boolean?
 ---@field overrides table<string, FlagUp.Line>? by the overriding character's name: the fields it overrides
 
----The rule lines of a ruleset and faction.
+---The rule lines of a household.
 ---@class FlagUp.RuleLines
 ---@field categories table<integer, FlagUp.Line> by item class ID
 ---@field subcategories table<integer, table<integer, FlagUp.Line>> by item class ID, then subclass ID
@@ -23,9 +23,9 @@ ns.Rules = Rules
 ---The lines, created with the first one.
 ---@return FlagUp.RuleLines
 function Rules.Lines()
-    local entry = ns.Characters.PlayerRulesetFaction()
-    if not entry.rules then entry.rules = { categories = {}, subcategories = {}, items = {} } end
-    return entry.rules
+    local household = ns.Characters.PlayerHousehold()
+    if not household.rules then household.rules = { categories = {}, subcategories = {}, items = {} } end
+    return household.rules
 end
 
 ---@param classID integer
@@ -136,14 +136,17 @@ local function resolvedValue(place, field, character)
 end
 
 ---The value a field takes on a line, for everyone or for a character (resolvedValue). A rule that would send a
----character's items to itself keeps them: for that character, it is Don't send.
+---character's items where its mail can't go (to itself, or across factions it can't mail) keeps them: for that
+---character, it is Don't send.
 ---@param place FlagUp.LinePlace
 ---@param field FlagUp.FieldName
 ---@param character string? nil: the shared value
 ---@return any
 function Rules.Value(place, field, character)
     local value = resolvedValue(place, field, character)
-    if field == "sendTo" and character ~= nil and value == character then return false end
+    if field == "sendTo" and character ~= nil and value and not ns.Characters.CanMail(character, value) then
+        return false
+    end
     return value
 end
 
@@ -176,6 +179,48 @@ function Rules.RenameCharacter(oldName, newName)
         for _, line in pairs(subcategories) do renameIn(line) end
     end
     for _, line in pairs(lines.items) do renameIn(line) end
+end
+
+---Joins another household's lines into a household's: a line only the other has is added; on a line both have, the
+---household keeps its fields and its overrides' fields, the other's filling those it leaves unset.
+---@param lines FlagUp.RuleLines the household's, kept
+---@param other FlagUp.RuleLines the joined household's
+function Rules.JoinLines(lines, other)
+    ---@param line FlagUp.Line|table
+    ---@param from FlagUp.Line|table
+    local function fill(line, from)
+        for _, field in ipairs(Rules.FIELDS) do
+            if line[field] == nil and from[field] ~= nil then
+                line[field] = type(from[field]) == "table" and CopyTable(from[field]) or from[field]
+            end
+        end
+    end
+
+    ---@param line FlagUp.Line
+    ---@param from FlagUp.Line
+    local function join(line, from)
+        fill(line, from)
+        for character, override in pairs(from.overrides or {}) do
+            line.overrides = line.overrides or {}
+            line.overrides[character] = line.overrides[character] or {}
+            fill(line.overrides[character], override)
+        end
+    end
+
+    ---@param into table<integer, FlagUp.Line>
+    ---@param from table<integer, FlagUp.Line>
+    local function joinAll(into, from)
+        for id, line in pairs(from) do
+            if into[id] then join(into[id], line) else into[id] = CopyTable(line) end
+        end
+    end
+
+    joinAll(lines.categories, other.categories)
+    for classID, subcategories in pairs(other.subcategories) do
+        lines.subcategories[classID] = lines.subcategories[classID] or {}
+        joinAll(lines.subcategories[classID], subcategories)
+    end
+    joinAll(lines.items, other.items)
 end
 
 -- Editing ----------------------------------------------------------------------------------------

@@ -7,7 +7,8 @@ ns.Store = Store
 
 ---Account-wide saved data (FlagUpDB.global).
 ---@class FlagUp.Data
----@field rulesetFactions table<string, FlagUp.RulesetFaction> by ruleset and faction, "PvP-Alliance"
+---@field rulesetFactions table<string, FlagUp.Household> on Forever, by ruleset and faction, "PvP-Alliance"
+---@field realmHouseholds table<string, FlagUp.Household> elsewhere, by connected realms, "Medivh-Suramar"
 
 ---Settings (FlagUpDB.profile; one "Default" profile shared by every character).
 ---@class FlagUp.Settings
@@ -20,6 +21,7 @@ ns.Store = Store
 Store.DEFAULTS = {
     global = {
         rulesetFactions = {},
+        realmHouseholds = {},
     },
     profile = {
         launcher = { hide = false, showInCompartment = true },

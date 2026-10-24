@@ -1,7 +1,7 @@
 local _, ns = ...
 ---@cast ns FlagUp.Namespace
 
----The player's characters: the recipients of each ruleset and faction.
+---The player's characters: the recipients of each household that mail reaches.
 ---@class FlagUp.Characters
 local Characters = {}
 ns.Characters = Characters
@@ -10,10 +10,13 @@ ns.Characters = Characters
 ---@class FlagUp.Character
 ---@field typed boolean typed by the player; false: it logged in with Flag Up
 ---@field guid string? the character's GUID, saved when it logs in: it stays the same when the character is renamed
+---@field faction string? "Alliance" or "Horde": its own once it logs in; typed, the faction of the character that
+---typed it
 
----The characters and rules of one ruleset and faction: mail only reaches a character of both.
----@class FlagUp.RulesetFaction
----@field characters table<string, FlagUp.Character> by name, "First Surname"
+---The characters and rules of the characters mail reaches: on Forever, one ruleset and faction; elsewhere, a realm and
+---the realms connected to it, both factions.
+---@class FlagUp.Household
+---@field characters table<string, FlagUp.Character> by name: "First Surname" on Forever, "Name-Realm" elsewhere
 ---@field rules FlagUp.RuleLines? created with the first line
 ---@field ignored FlagUp.IgnoredItems? created with the first item ignored
 
@@ -28,31 +31,158 @@ local function ruleset()
     return "Normal"
 end
 
----The character being played's whole name, "First Surname". On Forever, UnitFullName returns the surname where retail
----returns the realm.
+-- On Forever, characters have a surname and no realm; elsewhere, their realm, which mail names as "Name-Realm".
+local IS_FOREVER = WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
+
+---Outside Forever: the realm being played and the realms connected to it, which mail reaches, by normalized name.
+---@return table<string, true>
+local function reachableRealms()
+    local connected
+    if C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms then
+        connected = C_AutoComplete.GetAutoCompleteRealms()
+    else
+        connected = GetAutoCompleteRealms()
+    end
+    local realms = { [GetNormalizedRealmName()] = true }
+    for _, realm in ipairs(connected or {}) do realms[realm] = true end
+    return realms
+end
+
+---A household's key outside Forever: its realms, in order, joined with "-" (normalized realm names hold no "-").
+---@param realms table<string, true>
+---@return string
+local function realmHouseholdKey(realms)
+    local names = {}
+    for realm in pairs(realms) do names[#names + 1] = realm end
+    table.sort(names)
+    return table.concat(names, "-")
+end
+
+---The realm of a "Name-Realm" name.
+---@param name string
+---@return string?
+local function realmOf(name)
+    return name:match("%-(.+)$")
+end
+
+---The character being played's whole name: "First Surname" on Forever, where UnitFullName returns the surname in place
+---of the realm; "Name-Realm" elsewhere.
 ---@return string
 function Characters.PlayerName()
-    local name, surname = UnitFullName("player")
-    return surname and (name .. " " .. surname) or name
+    local name, second = UnitFullName("player")
+    if IS_FOREVER then return second and (name .. " " .. second) or name end
+    return name .. "-" .. (second or GetNormalizedRealmName())
 end
 
----The entry of the character being played's ruleset and faction, created with its first character.
----@return FlagUp.RulesetFaction
-function Characters.PlayerRulesetFaction()
-    local key = ruleset() .. "-" .. UnitFactionGroup("player")
-    local entry = ns.data.rulesetFactions[key]
-    if not entry then
-        entry = { characters = {} }
-        ns.data.rulesetFactions[key] = entry
+---A name as shown: outside Forever, without the realm when it is the realm being played.
+---@param name string
+---@return string
+function Characters.ShownName(name)
+    if IS_FOREVER or realmOf(name) ~= GetNormalizedRealmName() then return name end
+    return (name:gsub("%-[^%-]+$", ""))
+end
+
+---A typed name as Flag Up keeps it, or nil when it isn't a character's whole name: "First Surname" on Forever;
+---"Name-Realm" elsewhere, a name alone being on the realm being played. The realm is written without spaces or "-",
+---as the game names it, and spelled as a realm mail reaches when it is one.
+---@param text string
+---@return string?
+function Characters.TypedName(text)
+    local name = strtrim(text)
+    if IS_FOREVER then return name:match("^%S+ %S+$") and name or nil end
+    if name:match("^[^%s%-]+$") then return name .. "-" .. GetNormalizedRealmName() end
+    local short, realm = name:match("^([^%s%-]+)%-(.+)$")
+    if not short then return nil end
+    realm = realm:gsub("[%s%-]", "")
+    for reachable in pairs(reachableRealms()) do
+        if reachable:lower() == realm:lower() then realm = reachable end
     end
-    return entry
+    return short .. "-" .. realm
 end
 
----Adds the character being played to the known characters of its ruleset and faction. A character typed before
----becomes known. A character known under another name was renamed (the game can force it): its rules, overrides and
----ignored items move to the new name. Call on PLAYER_LOGIN.
+---Whether mail reaches a name's realm: on Forever, always; elsewhere, the realm being played and those connected to it.
+---@param name string
+---@return boolean
+function Characters.IsOnReachableRealm(name)
+    if IS_FOREVER then return true end
+    local realm = realmOf(name)
+    return realm ~= nil and reachableRealms()[realm] == true
+end
+
+---How a typed name is written, for the dialog's hint and error.
+---@return string
+function Characters.NameForm()
+    return IS_FOREVER and ns.L["First Surname"] or ns.L["Name-Realm"]
+end
+
+---@type string? outside Forever, the character being played's household key, found at its first use
+local realmsKey
+
+---The household of the character being played, created with its first character.
+---@return FlagUp.Household
+function Characters.PlayerHousehold()
+    local households, key
+    if IS_FOREVER then
+        households, key = ns.data.rulesetFactions, ruleset() .. "-" .. UnitFactionGroup("player")
+    else
+        realmsKey = realmsKey or realmHouseholdKey(reachableRealms())
+        households, key = ns.data.realmHouseholds, realmsKey
+    end
+    local household = households[key]
+    if not household then
+        household = { characters = {} }
+        households[key] = household
+    end
+    return household
+end
+
+---Outside Forever, joins into the household being played the households of its realms saved apart: realms connected
+---since, or seen before their connected realms were. Their characters are joined; their rule lines and ignored items
+---are added, and on a line both have, the household being played keeps its fields, the other's filling those it leaves
+---unset.
+local function joinConnectedHouseholds()
+    if IS_FOREVER then return end
+    local household = Characters.PlayerHousehold()
+    local realms = reachableRealms()
+
+    local joined = {}
+    for key, other in pairs(ns.data.realmHouseholds) do
+        if other ~= household then
+            for realm in key:gmatch("[^%-]+") do
+                if realms[realm] then
+                    joined[#joined + 1] = key
+                    break
+                end
+            end
+        end
+    end
+
+    for _, key in ipairs(joined) do
+        local other = ns.data.realmHouseholds[key]
+        ns.data.realmHouseholds[key] = nil
+        for name, character in pairs(other.characters) do
+            local current = household.characters[name]
+            if not current or (current.typed and not character.typed) then household.characters[name] = character end
+        end
+        if other.rules then
+            household.rules = household.rules or { categories = {}, subcategories = {}, items = {} }
+            ns.Rules.JoinLines(household.rules, other.rules)
+        end
+        if other.ignored then
+            household.ignored = household.ignored or { all = {}, characters = {} }
+            ns.Ignored.JoinItems(household.ignored, other.ignored)
+        end
+    end
+end
+
+---Adds the character being played to the known characters of its household. A character typed before becomes known. A
+---character known under another name was renamed (the game can force it): its rules, overrides and ignored items move
+---to the new name. Outside Forever, the households of realms connected since join the household first. Call on
+---PLAYER_LOGIN.
 function Characters.RecordPlayer()
-    local characters = Characters.PlayerRulesetFaction().characters
+    joinConnectedHouseholds()
+
+    local characters = Characters.PlayerHousehold().characters
     local name, guid = Characters.PlayerName(), UnitGUID("player")
 
     local oldNames = {}
@@ -65,35 +195,49 @@ function Characters.RecordPlayer()
         ns.Ignored.RenameCharacter(oldName, name)
     end
 
-    characters[name] = { typed = false, guid = guid }
+    characters[name] = { typed = false, guid = guid, faction = UnitFactionGroup("player") }
 end
 
----The names of the characters of the ruleset and faction being played that logged in with Flag Up, by name.
+---Whether mail goes from one character of the household to another. Never to itself. Outside Forever, mail crosses
+---factions only between the player's own characters (known: typed ones may be another account's) of one realm.
+---@param sender string
+---@param recipient string
+---@return boolean
+function Characters.CanMail(sender, recipient)
+    if sender == recipient then return false end
+    if IS_FOREVER then return true end
+    local characters = Characters.PlayerHousehold().characters
+    local from, to = characters[sender], characters[recipient]
+    if not (from and to and from.faction and to.faction) or from.faction == to.faction then return true end
+    return not from.typed and not to.typed and realmOf(sender) == realmOf(recipient)
+end
+
+---The names of the characters of the household being played that logged in with Flag Up, by name.
 ---@return string[]
 function Characters.KnownNames()
     local names = {}
-    for name, character in pairs(Characters.PlayerRulesetFaction().characters) do
+    for name, character in pairs(Characters.PlayerHousehold().characters) do
         if not character.typed then names[#names + 1] = name end
     end
     table.sort(names)
     return names
 end
 
----Adds a character typed by the player, of the ruleset and faction being played; a character already there stays as
----it is.
----@param name string "First Surname"
+---Adds a character typed by the player to the household being played, of the faction being played; a character already
+---there stays as it is.
+---@param name string "First Surname" on Forever, "Name-Realm" elsewhere
 function Characters.AddTyped(name)
-    local characters = Characters.PlayerRulesetFaction().characters
-    if not characters[name] then characters[name] = { typed = true } end
+    local characters = Characters.PlayerHousehold().characters
+    if not characters[name] then characters[name] = { typed = true, faction = UnitFactionGroup("player") } end
 end
 
----The names of the characters of the ruleset and faction being played, known and typed, by name.
----@param except string? a character left out
+---The names of the characters of the household being played that a character can mail, known and typed, by name.
+---@param sender string
 ---@return string[]
-function Characters.Names(except)
+function Characters.Recipients(sender)
     local names = {}
-    for name in pairs(Characters.PlayerRulesetFaction().characters) do
-        if name ~= except then names[#names + 1] = name end
+    for name in pairs(Characters.PlayerHousehold().characters) do
+        if Characters.CanMail(sender, name) then names[#names + 1] = name end
     end
     table.sort(names)
     return names

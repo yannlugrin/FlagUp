@@ -63,7 +63,7 @@ dialog.Hint = dialog:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 dialog.Hint:SetPoint("TOPLEFT", dialog.Label, "BOTTOMLEFT", 0, -6 - BUTTON_HEIGHT - 10)
 dialog.Hint:SetPoint("RIGHT", -PADDING, 0)
 dialog.Hint:SetJustifyH("LEFT")
-dialog.Hint:SetText(L["The whole name, \"First Surname\", of a character of this ruleset and faction."])
+dialog.Hint:SetText(L["The whole name, \"%s\", of a character your mail reaches."]:format(ns.Characters.NameForm()))
 
 -- A refused name's error, in red.
 dialog.Error = dialog:CreateFontString(nil, "OVERLAY", "GameFontRedSmall")
@@ -79,9 +79,13 @@ local onName
 local refused
 
 local function accept()
-    local name = strtrim(dialog.Input:GetText())
-    if not name:match("^%S+ %S+$") then
-        dialog.Error:SetText(L["Type the whole name: First Surname."])
+    local name = ns.Characters.TypedName(dialog.Input:GetText())
+    if not name then
+        dialog.Error:SetText(L["Type the whole name: %s."]:format(ns.Characters.NameForm()))
+        return
+    end
+    if not ns.Characters.IsOnReachableRealm(name) then
+        dialog.Error:SetText(L["Mail can't reach this realm."])
         return
     end
     if name == refused then

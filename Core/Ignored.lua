@@ -1,13 +1,13 @@
 local _, ns = ...
 ---@cast ns FlagUp.Namespace
 
----The items never offered at the mailbox, whatever the rules: ignored by every character of the ruleset and faction
----being played, or by one.
+---The items never offered at the mailbox, whatever the rules: ignored by every character of the household being
+---played, or by one.
 ---@class FlagUp.Ignored
 local Ignored = {}
 ns.Ignored = Ignored
 
----The ignored items of a ruleset and faction.
+---The ignored items of a household.
 ---@class FlagUp.IgnoredItems
 ---@field all table<integer, true> by item ID: ignored by every character
 ---@field characters table<string, table<integer, true>> by name, then item ID: ignored by that character
@@ -15,9 +15,9 @@ ns.Ignored = Ignored
 ---The ignored items, created with the first one.
 ---@return FlagUp.IgnoredItems
 local function ignoredItems()
-    local entry = ns.Characters.PlayerRulesetFaction()
-    if not entry.ignored then entry.ignored = { all = {}, characters = {} } end
-    return entry.ignored
+    local household = ns.Characters.PlayerHousehold()
+    if not household.ignored then household.ignored = { all = {}, characters = {} } end
+    return household.ignored
 end
 
 ---Whether every character ignores an item.
@@ -90,7 +90,7 @@ end
 ---@field itemID integer
 ---@field character string? nil: by every character
 
----Every item ignored in the ruleset and faction being played, by every character and by each one.
+---Every item ignored in the household being played, by every character and by each one.
 ---@return FlagUp.IgnoredEntry[]
 function Ignored.Entries()
     local items = ignoredItems()
@@ -112,4 +112,20 @@ function Ignored.RenameCharacter(oldName, newName)
     characters[oldName] = nil
     characters[newName] = characters[newName] or {}
     for itemID in pairs(old) do characters[newName][itemID] = true end
+end
+
+---Joins another household's ignored items into a household's. An item ignored by every character is no longer ignored
+---by each one apart.
+---@param items FlagUp.IgnoredItems the household's
+---@param other FlagUp.IgnoredItems the joined household's
+function Ignored.JoinItems(items, other)
+    for itemID in pairs(other.all) do items.all[itemID] = true end
+    for character, own in pairs(other.characters) do
+        items.characters[character] = items.characters[character] or {}
+        for itemID in pairs(own) do items.characters[character][itemID] = true end
+    end
+    for character, own in pairs(items.characters) do
+        for itemID in pairs(items.all) do own[itemID] = nil end
+        if not next(own) then items.characters[character] = nil end
+    end
 end

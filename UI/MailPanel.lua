@@ -345,9 +345,9 @@ local function initMailRow(row, mail)
     if not row.Title then createMailRow(row) end
 
     if mail.parts then
-        row.Title:SetText(L["%s · %d of %d"]:format(mail.recipient, mail.part, mail.parts))
+        row.Title:SetText(L["%s · %d of %d"]:format(ns.Characters.ShownName(mail.recipient), mail.part, mail.parts))
     else
-        row.Title:SetText(mail.recipient)
+        row.Title:SetText(ns.Characters.ShownName(mail.recipient))
     end
     row.Status:SetText(STATUS_TEXTS[mail.status])
     row.Status:SetTextColor(STATUS_COLORS[mail.status]:GetRGB())
@@ -428,7 +428,7 @@ function panel:ShowPreview(preview)
 
     local elements = {}
     for _, group in ipairs(preview.groups) do
-        elements[#elements + 1] = { header = { kind = "category", name = group.recipient, mails = mailCount(group.mails) } }
+        elements[#elements + 1] = { header = { kind = "category", name = ns.Characters.ShownName(group.recipient), mails = mailCount(group.mails) } }
         for _, item in ipairs(group.items) do
             elements[#elements + 1] = { item = item }
         end
@@ -529,7 +529,7 @@ StaticPopupDialogs.FLAGUP_IGNORE_ITEM = {
 
 ---@param itemID integer
 local function askToIgnore(itemID)
-    StaticPopupDialogs.FLAGUP_IGNORE_ITEM.button2 = L["Only %s"]:format(ns.Characters.PlayerName())
+    StaticPopupDialogs.FLAGUP_IGNORE_ITEM.button2 = L["Only %s"]:format(ns.Characters.ShownName(ns.Characters.PlayerName()))
     local name = C_Item.GetItemNameByID(itemID) or RETRIEVING_ITEM_INFO
     StaticPopup_Show("FLAGUP_IGNORE_ITEM", L["Ignore %s? It will no longer be offered at the mailbox."]:format(name), nil,
         itemID)

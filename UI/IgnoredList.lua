@@ -149,7 +149,7 @@ local function initRow(row, ignored)
     row.Icon:SetTexture(ignored.icon)
     row.Name:SetText(ignored.name)
     row.Name:SetTextColor(ignored.color:GetRGB())
-    row.IgnoredBy:SetText(ignored.character or L["All characters"])
+    row.IgnoredBy:SetText(ignored.character and ns.Characters.ShownName(ignored.character) or L["All characters"])
 end
 
 local listView = CreateScrollBoxListLinearView()
