@@ -13,6 +13,7 @@
 ## X-Github: https://github.com/yannlugrin/FlagUp
 ## X-License: MIT
 ## X-Curse-Project-ID: 1758443
+## X-Wago-ID: 96d08l6O
 
 Libs.xml
 

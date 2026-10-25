@@ -19,6 +19,7 @@ jobs:
       contents: write
     env:
       CF_API_KEY: ${{ secrets.CF_API_TOKEN }}
+      WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
       GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
     steps:
       # Release only a commit whose Checks passed on main.
