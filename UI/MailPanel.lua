@@ -98,6 +98,9 @@ local HINT_PADDING = 4
 local ALT_TABS_X, ALT_TABS_TOP, ALT_TAB_GAP = -2, -36, 0
 -- As large as the community frame's tab icons.
 local ALT_TAB_ICON_SIZE = 34
+-- The rules window's tab, at the bottom of the panel's right edge, below the alt tabs.
+local RULES_TAB_BOTTOM = 8
+local ADDON_ICON = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icon"
 
 -- Panel ------------------------------------------------------------------------------------------
 
@@ -415,11 +418,29 @@ local function altTab(index)
     return tab
 end
 
----Shows a tab for each alt, as many as the panel's height holds; nil: none.
+-- The rules window's tab: Flag Up's icon; a click opens or closes the rules window.
+local rulesTab = CreateFrame("Frame", nil, panel, "LargeSideTabButtonTemplate") --[[@as FlagUp.AltTab]]
+rulesTab:SetPoint("BOTTOMLEFT", panel, "BOTTOMRIGHT", ALT_TABS_X, RULES_TAB_BOTTOM)
+rulesTab:SetChecked(false)
+rulesTab:EnableMouse(true)
+rulesTab.Icon:SetSize(ALT_TAB_ICON_SIZE, ALT_TAB_ICON_SIZE)
+rulesTab.Icon:SetTexture(ADDON_ICON)
+rulesTab:SetCustomOnMouseUpHandler(function() ns.RulesWindow.Toggle() end)
+rulesTab:SetScript("OnEnter", function()
+    GameTooltip:SetOwner(rulesTab, "ANCHOR_RIGHT")
+    GameTooltip:SetText(C_AddOns.GetAddOnMetadata(addonName, "Title"), HIGHLIGHT_FONT_COLOR:GetRGB())
+    GameTooltip:AddLine(L["Click: show or hide the rules window"], nil, nil, nil, true)
+    GameTooltip:Show()
+end)
+rulesTab:SetScript("OnLeave", GameTooltip_Hide)
+
+---Shows a tab for each alt, as many as the panel's height holds above the rules window's tab; nil: none.
 ---@param alts FlagUp.MailAlt[]?
 local function showAltTabs(alts)
     alts = alts or {}
-    local fits = math.max(0, math.floor((panel:GetHeight() + ALT_TABS_TOP) / (altTab(1):GetHeight() + ALT_TAB_GAP)))
+    local step = altTab(1):GetHeight() + ALT_TAB_GAP
+    local room = panel:GetHeight() + ALT_TABS_TOP - RULES_TAB_BOTTOM - rulesTab:GetHeight() - ALT_TAB_GAP
+    local fits = math.max(0, math.floor(room / step))
     for index = 1, math.max(#alts, #altTabs) do
         local alt = index <= fits and alts[index] or nil
         if alt then
