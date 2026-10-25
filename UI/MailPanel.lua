@@ -23,12 +23,18 @@ ns.MailPanel = MailPanel
 ---@field onToggle fun()? a click on its checkbox
 ---@field uncheckedWhy string? unchecked by the settings, not by hand: why, for its checkbox's tooltip
 ---@field onIgnore fun()? a click on its Ignore button
+---@field dropped boolean? dropped on its recipient during this visit: tagged "by hand", with a remove button in place
+---of the Ignore button
+---@field onRemove fun()? a click on its remove button
+---@field droppedOn string? the rules send it to its recipient, but it was dropped on that other one: its count is 0,
+---and its checkbox and count box are disabled
 
 ---A recipient and the items it gets, ready to show.
 ---@class FlagUp.MailGroup
 ---@field recipient string
 ---@field mails integer
 ---@field items FlagUp.MailItem[]
+---@field onDrop fun(itemID: integer) an item dropped on its header or items, or below them when it is the last
 
 ---What the mailbox would send, ready to show.
 ---@class FlagUp.MailPreview
@@ -68,6 +74,9 @@ local AMOUNT_WIDTH, AMOUNT_HEIGHT = 44, 20
 local IGNORE_BUTTON_SIZE = 16
 -- The game's loot Pass button, as the Ignore button.
 local IGNORE_TEXTURE, IGNORE_TEXTURE_DOWN = "Interface\\Buttons\\UI-GroupLoot-Pass-Up", "Interface\\Buttons\\UI-GroupLoot-Pass-Down"
+-- The cross the Ignored tab takes an item back with, as the remove button.
+local REMOVE_TEXTURE = "Interface\\RaidFrame\\ReadyCheck-NotReady"
+local DROP_ERROR_HEIGHT = 14
 local MAIL_TITLE_HEIGHT = 18
 local SPINNER_SIZE = 16
 local ATTACHMENT_SIZE, ATTACHMENT_GAP = 26, 2
@@ -126,6 +135,8 @@ list.Empty:SetText(L["Nothing to send."])
 ---@field Name FontString
 ---@field Amount EditBox how many go, to change by hand
 ---@field IgnoreButton Button
+---@field ByHand FontString "by hand", on an item dropped on its recipient
+---@field RemoveButton Button in place of the Ignore button, on an item dropped on its recipient
 ---@field item FlagUp.MailItem the item shown
 
 ---@param row FlagUp.MailItemRow
@@ -133,14 +144,24 @@ local function createItemRow(row)
     row.Checkbox = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
     row.Checkbox:SetSize(CHECKBOX_SIZE, CHECKBOX_SIZE)
     row.Checkbox:SetPoint("LEFT", 2, 0)
+    -- Its tooltip shows while it is disabled too: why it can't be changed.
+    row.Checkbox:SetMotionScriptsWhileDisabled(true)
     row.Checkbox:SetScript("OnClick", function()
         if row.item.onToggle then row.item.onToggle() end
     end)
-    -- Unchecked by the settings: why, and where to change it.
+    -- Dropped on another recipient: where it goes instead. Unchecked by the settings: why, and where to change it.
     row.Checkbox:SetScript("OnEnter", function(checkbox)
-        if not row.item.uncheckedWhy then return end
+        local item = row.item
+        if item.droppedOn then
+            GameTooltip:SetOwner(checkbox, "ANCHOR_RIGHT")
+            GameTooltip:SetText(L["Dropped on %s: all of it goes there."]:format(ns.Characters.ShownName(item.droppedOn)),
+                HIGHLIGHT_FONT_COLOR:GetRGB())
+            GameTooltip:Show()
+            return
+        end
+        if not item.uncheckedWhy then return end
         GameTooltip:SetOwner(checkbox, "ANCHOR_RIGHT")
-        GameTooltip:SetText(row.item.uncheckedWhy, HIGHLIGHT_FONT_COLOR:GetRGB())
+        GameTooltip:SetText(item.uncheckedWhy, HIGHLIGHT_FONT_COLOR:GetRGB())
         GameTooltip:AddLine(L["Check it to send it this time; Flag Up's settings change this."], nil, nil, nil, true)
         GameTooltip:Show()
     end)
@@ -175,6 +196,20 @@ local function createItemRow(row)
     end)
     row.IgnoreButton:SetScript("OnLeave", GameTooltip_Hide)
 
+    row.RemoveButton = CreateFrame("Button", nil, row)
+    row.RemoveButton:SetAllPoints(row.IgnoreButton)
+    row.RemoveButton:SetNormalTexture(REMOVE_TEXTURE)
+    row.RemoveButton:SetHighlightTexture(REMOVE_TEXTURE, "ADD")
+    row.RemoveButton:SetScript("OnClick", function()
+        if row.item.onRemove then row.item.onRemove() end
+    end)
+    row.RemoveButton:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, "ANCHOR_RIGHT")
+        GameTooltip:SetText(L["Remove from this mail"], HIGHLIGHT_FONT_COLOR:GetRGB())
+        GameTooltip:Show()
+    end)
+    row.RemoveButton:SetScript("OnLeave", GameTooltip_Hide)
+
     -- How many go: typed with Enter or on leaving the box; Escape puts the count back.
     row.Amount = CreateFrame("EditBox", nil, row, "InputBoxTemplate")
     row.Amount:SetSize(AMOUNT_WIDTH, AMOUNT_HEIGHT)
@@ -197,7 +232,7 @@ local function createItemRow(row)
         local item = row.item
         local kept = item.bagCount - item.ruleCount
         local text
-        if item.count == item.ruleCount and kept == 0 then
+        if item.dropped or (item.count == item.ruleCount and kept == 0) then
             text = L["%d in the bags."]:format(item.bagCount)
         elseif item.count == item.ruleCount then
             text = L["%d in the bags, the rules keep %d."]:format(item.bagCount, kept)
@@ -210,9 +245,12 @@ local function createItemRow(row)
     end)
     row.Amount:SetScript("OnLeave", GameTooltip_Hide)
 
+    row.ByHand = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    row.ByHand:SetPoint("RIGHT", row.Amount, "LEFT", -8, 0)
+    row.ByHand:SetText(L["by hand"])
+
     row.Name = row:CreateFontString(nil, "OVERLAY", "GameFontNormalLeft")
     row.Name:SetPoint("LEFT", row.Icon, "RIGHT", 6, 0)
-    row.Name:SetPoint("RIGHT", row.Amount, "LEFT", -8, 0)
     row.Name:SetWordWrap(false)
 
     ns.Skin.Apply(function(S)
@@ -229,18 +267,29 @@ local function initItemRow(row, item)
     row.item = item
 
     row.Checkbox:SetChecked(item.checked)
+    -- Dropped on another recipient: nothing to change here.
+    row.Checkbox:SetEnabled(item.droppedOn == nil)
+    if item.droppedOn then row.Amount:Disable() else row.Amount:Enable() end
     row.Icon:SetTexture(item.icon)
     row.Icon:SetDesaturated(not item.checked)
     row.Name:SetText(item.name)
     row.Name:SetTextColor(item.color:GetRGB())
-    -- A count set by hand shows in gold.
+    -- Dropped on its recipient: "by hand" after the name, and the remove button in place of the Ignore button.
+    local dropped = item.dropped == true
+    row.ByHand:SetShown(dropped)
+    row.Name:SetPoint("RIGHT", dropped and row.ByHand or row.Amount, "LEFT", -8, 0)
+    row.IgnoreButton:SetShown(not dropped)
+    row.RemoveButton:SetShown(dropped)
+    -- A count set by hand shows in gold; dropped on another recipient, in grey.
     if not row.Amount:HasFocus() then row.Amount:SetText(tostring(item.count)) end
     local countColor = item.count ~= item.ruleCount and NORMAL_FONT_COLOR or HIGHLIGHT_FONT_COLOR
+    if item.droppedOn then countColor = GRAY_FONT_COLOR end
     row.Amount:SetTextColor(countColor:GetRGB())
     -- An unchecked item stays in the bags: its row is dimmed.
     local alpha = item.checked and 1 or DIMMED_ALPHA
     row.Icon:SetAlpha(alpha)
     row.Name:SetAlpha(alpha)
+    row.ByHand:SetAlpha(alpha)
     row.Amount:SetAlpha(alpha)
 end
 
@@ -259,6 +308,38 @@ listView:SetElementExtentCalculator(function(index, element)
     return ns.TreeRow.Height(index, element.header)
 end)
 ScrollUtil.InitScrollBoxListWithScrollBar(list.ScrollBox, list.ScrollBar, listView)
+
+---The drop handler of the recipient under the cursor: its header's or one of its items'; below the last row, the last
+---recipient's. nil: the list is empty.
+---@return fun(itemID: integer)?
+local function dropUnderCursor()
+    local found
+    list.ScrollBox:ForEachFrame(function(frame, element)
+        if frame:IsMouseOver() then found = element.onDrop end
+    end)
+    if found then return found end
+    local provider = list.ScrollBox:GetDataProvider()
+    local last = provider and provider:GetSize() > 0 and provider:Find(provider:GetSize())
+    return last and last.onDrop or nil
+end
+
+-- While the cursor holds an item, the list takes it: dropped on a recipient's header or items, or below the last
+-- recipient's, it goes to that recipient, whose header lights up while the item is over it.
+local listDrop = ns.ItemDrop.Accept(list.ScrollBox, function(itemID)
+    local onDrop = dropUnderCursor()
+    if onDrop then onDrop(itemID) end
+end)
+if listDrop then
+    ---@param onDrop fun(itemID: integer)? the recipient lit up; nil: none
+    local function lightHeader(onDrop)
+        list.ScrollBox:ForEachFrame(function(frame, element)
+            if not element.header then return end
+            if onDrop and element.onDrop == onDrop then frame:LockHighlight() else frame:UnlockHighlight() end
+        end)
+    end
+    listDrop:SetScript("OnUpdate", function() lightHeader(listDrop:IsMouseOver() and dropUnderCursor() or nil) end)
+    listDrop:SetScript("OnHide", function() lightHeader(nil) end)
+end
 
 -- Sending ----------------------------------------------------------------------------------------
 
@@ -407,6 +488,21 @@ panel.Summary:SetPoint("LEFT", panel, "BOTTOMLEFT", PADDING, PADDING + BUTTON_HE
 panel.Summary:SetPoint("RIGHT", panel.SendButton, "LEFT", -8, 0)
 panel.Summary:SetJustifyH("LEFT")
 
+-- An item dropped that can't be mailed: why, in red, above the summary; the list makes room for it.
+panel.DropError = panel:CreateFontString(nil, "OVERLAY", "GameFontRedSmall")
+panel.DropError:SetPoint("BOTTOMLEFT", list, "BOTTOMLEFT", 0, -DROP_ERROR_HEIGHT - 4)
+panel.DropError:SetPoint("RIGHT", -PADDING, 0)
+panel.DropError:SetJustifyH("LEFT")
+panel.DropError:Hide()
+
+---@param text string? nil: none
+local function showDropError(text)
+    panel.DropError:SetText(text or "")
+    panel.DropError:SetShown(text ~= nil)
+    local bottom = text and LIST_BOTTOM + DROP_ERROR_HEIGHT + 4 or LIST_BOTTOM
+    list:SetPoint("BOTTOMRIGHT", -PADDING, bottom)
+end
+
 ---@param mails integer
 ---@return string
 local function mailCount(mails)
@@ -428,9 +524,12 @@ function panel:ShowPreview(preview)
 
     local elements = {}
     for _, group in ipairs(preview.groups) do
-        elements[#elements + 1] = { header = { kind = "category", name = ns.Characters.ShownName(group.recipient), mails = mailCount(group.mails) } }
+        elements[#elements + 1] = {
+            header = { kind = "category", name = ns.Characters.ShownName(group.recipient), mails = mailCount(group.mails) },
+            onDrop = group.onDrop,
+        }
         for _, item in ipairs(group.items) do
-            elements[#elements + 1] = { item = item }
+            elements[#elements + 1] = { item = item, onDrop = group.onDrop }
         end
     end
     list.ScrollBox:SetDataProvider(CreateDataProvider(elements), ScrollBoxConstants.RetainScrollPosition)
@@ -481,11 +580,15 @@ end
 local choices = {}
 ---@type table<integer, integer> the counts set by hand during this visit to the mailbox, by item ID
 local amounts = {}
+---@type table<integer, string> the items dropped on a recipient during this visit to the mailbox, by item ID: the
+---recipient
+local dropped = {}
 
 ---Whether an item goes: as checked or unchecked by hand this visit, else as the settings judge its worth.
 ---@param shipment FlagUp.Shipment
 ---@return boolean
 local function isChecked(shipment)
+    if shipment.droppedOn then return false end
     local choice = choices[shipment.itemID]
     if choice ~= nil then return choice end
     return ns.Mailing.UncheckReason(shipment) == nil
@@ -543,11 +646,21 @@ local function mailPreview()
     ---@type FlagUp.Shipment[] the checked items: what goes
     local checkedShipments = {}
 
-    for _, shipment in ipairs(ns.Mailing.Shipments(amounts)) do
+    for _, shipment in ipairs(ns.Mailing.Shipments(amounts, dropped)) do
         local recipient, itemID = shipment.recipient, shipment.itemID
         local group = groupsByRecipient[recipient]
         if not group then
-            group = { recipient = recipient, mails = 0, items = {} }
+            -- An item dropped on the header goes to this recipient, all of it, checked; one that can't be mailed is
+            -- refused, in red.
+            group = { recipient = recipient, mails = 0, items = {}, onDrop = function(droppedID)
+                if not ns.Mailing.Mailable(droppedID) then
+                    showDropError(L["This item can't be mailed: it is bound or in an equipment set."])
+                    return
+                end
+                showDropError(nil)
+                dropped[droppedID], amounts[droppedID], choices[droppedID] = recipient, nil, true
+                MailPanel.Refresh()
+            end }
             groupsByRecipient[recipient] = group
         end
 
@@ -560,6 +673,7 @@ local function mailPreview()
             color = quality and ColorManager.GetColorDataForItemQuality(quality).color or WHITE_FONT_COLOR,
             count = shipment.count,
             ruleCount = shipment.ruleCount,
+            droppedOn = shipment.droppedOn,
             bagCount = shipment.bagCount,
             -- A count typed goes, checked; 0 unchecks the item; an emptied box goes back to the rules' count.
             onAmount = function(count)
@@ -577,8 +691,14 @@ local function mailPreview()
                 choices[itemID] = not checked
                 MailPanel.Refresh()
             end,
-            uncheckedWhy = uncheckedWhy(shipment),
+            uncheckedWhy = not shipment.droppedOn and uncheckedWhy(shipment) or nil,
             onIgnore = function() askToIgnore(itemID) end,
+            dropped = shipment.dropped,
+            -- Back to what the rules do with it.
+            onRemove = function()
+                dropped[itemID], amounts[itemID], choices[itemID] = nil, nil, nil
+                MailPanel.Refresh()
+            end,
         })
         if checked then checkedShipments[#checkedShipments + 1] = shipment end
     end
@@ -623,7 +743,7 @@ end
 ---Sends the checked items, mail by mail; the sending view follows each mail.
 local function startSending()
     local shipments = {}
-    for _, shipment in ipairs(ns.Mailing.Shipments(amounts)) do
+    for _, shipment in ipairs(ns.Mailing.Shipments(amounts, dropped)) do
         if isChecked(shipment) then shipments[#shipments + 1] = shipment end
     end
     table.sort(shipments, function(a, b) return a.itemID < b.itemID end)
@@ -662,7 +782,8 @@ function MailPanel.Open()
     panel:ClearAllPoints()
     panel:SetPoint("TOPLEFT", MailFrame, "TOPRIGHT", MAILBOX_GAP, 0)
     panel:SetPoint("BOTTOMLEFT", MailFrame, "BOTTOMRIGHT", MAILBOX_GAP, 0)
-    choices, amounts = {}, {}
+    choices, amounts, dropped = {}, {}, {}
+    showDropError(nil)
     local preview = mailPreview()
     panel:ShowPreview(preview)
     panel:Show()

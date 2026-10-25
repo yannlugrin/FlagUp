@@ -8,6 +8,7 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 
 - Mailbox panel: change how many of an item go, this time only; the count's tooltip tells how many are in the bags.
 - Retail: your characters of a realm and its connected realms share their rules and mail each other, the other faction too on your own realm; names show without the realm you play.
+- Mailbox panel: drop an item on a recipient's heading or items to send it all there, this time only; the rules' row elsewhere stays, at 0.
 
 ### Fixed
 

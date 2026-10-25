@@ -13,6 +13,7 @@ local canWatchCursor = C_EventUtils and C_EventUtils.IsEventValid("CURSOR_CHANGE
 ---`onDrop`; the cursor is then emptied.
 ---@param frame Frame
 ---@param onDrop fun(itemID: integer, link: string)
+---@return Frame? target the frame taking the drop; nil on a client that can't watch the cursor
 function ItemDrop.Accept(frame, onDrop)
     if not canWatchCursor then return end
 
@@ -33,4 +34,5 @@ function ItemDrop.Accept(frame, onDrop)
 
     target:RegisterEvent("CURSOR_CHANGED")
     target:SetScript("OnEvent", function() target:SetShown(GetCursorInfo() == "item") end)
+    return target
 end

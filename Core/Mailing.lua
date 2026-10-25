@@ -30,8 +30,10 @@ local LAST_BAG = NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS
 ---@field itemID integer
 ---@field recipient string
 ---@field count integer how many go: as the rules say, or as set by hand
----@field ruleCount integer how many the rules send
+---@field ruleCount integer how many the rules send; dropped on a recipient: all the bags hold
 ---@field bagCount integer how many the bags hold
+---@field dropped boolean? dropped on a recipient at the mailbox: it goes there, whatever the rules
+---@field droppedOn string? the rules send it here, but it was dropped on that other recipient: none goes here
 ---@field attachments FlagUp.Attachment[]
 ---@field sellPrice integer what a vendor pays for one, in copper; 0: a vendor won't buy it
 
@@ -120,32 +122,57 @@ local function attachmentsFor(itemID, stacks, amount)
     return attachments
 end
 
+---Whether the bags hold some of an item that can be mailed: not bound, not of an equipment set.
+---@param itemID integer
+---@return boolean
+function Mailing.Mailable(itemID)
+    return bagStacks()[itemID] ~= nil
+end
+
 ---What the rules send from the bags, for the character being played, item by item; ignored items are left out. An
----amount set by hand replaces the rules' (Keep and Full stacks only included), up to what the bags hold.
+---amount set by hand replaces the rules' (Keep and Full stacks only included), up to what the bags hold. An item
+---dropped on a recipient goes there, all of it, whatever the rules and even ignored; when the rules send it to
+---another recipient, that one keeps its shipment, at 0.
 ---@param amounts table<integer, integer>? by item ID: how many go, set by hand
+---@param dropped table<integer, string>? by item ID: the recipient it was dropped on
 ---@return FlagUp.Shipment[]
-function Mailing.Shipments(amounts)
+function Mailing.Shipments(amounts, dropped)
     local character = ns.Characters.PlayerName()
     local shipments = {}
     for itemID, stacks in pairs(bagStacks()) do
         local _, _, _, _, _, classID, subClassID = C_Item.GetItemInfoInstant(itemID)
         local _, _, quality, _, _, _, _, stackSize, _, _, sellPrice = C_Item.GetItemInfo(itemID)
+        local total = 0
+        for _, stack in ipairs(stacks) do total = total + stack.count end
+
+        local ruleRecipient, ruleAmount
         if classID and quality and not ns.Ignored.IsIgnored(itemID, character) then
             local place = { classID = classID, subClassID = subClassID, itemID = itemID }
-            local recipient = ns.Rules.Value(place, "sendTo", character)
-            if recipient and qualityPasses(place, character, quality) then
-                local total = 0
-                for _, stack in ipairs(stacks) do total = total + stack.count end
-                local ruleAmount = amountToSend(place, character, total, stackSize)
-                local amount = ruleAmount
-                if amounts and amounts[itemID] then amount = math.min(amounts[itemID], total) end
-                if amount > 0 then
-                    shipments[#shipments + 1] = {
-                        itemID = itemID, recipient = recipient, count = amount, ruleCount = ruleAmount, bagCount = total,
-                        attachments = attachmentsFor(itemID, stacks, amount), sellPrice = sellPrice or 0,
-                    }
-                end
+            ruleRecipient = ns.Rules.Value(place, "sendTo", character)
+            if ruleRecipient and qualityPasses(place, character, quality) then
+                ruleAmount = amountToSend(place, character, total, stackSize)
             end
+        end
+
+        local droppedOn = dropped and dropped[itemID]
+        local recipient, fullAmount = ruleRecipient, ruleAmount
+        if droppedOn then recipient, fullAmount = droppedOn, total end
+        if fullAmount then
+            local amount = fullAmount
+            if amounts and amounts[itemID] then amount = math.min(amounts[itemID], total) end
+            if amount > 0 then
+                shipments[#shipments + 1] = {
+                    itemID = itemID, recipient = recipient, count = amount, ruleCount = fullAmount, bagCount = total,
+                    dropped = droppedOn and true or nil,
+                    attachments = attachmentsFor(itemID, stacks, amount), sellPrice = sellPrice or 0,
+                }
+            end
+        end
+        if droppedOn and ruleAmount and ruleAmount > 0 and ruleRecipient ~= droppedOn then
+            shipments[#shipments + 1] = {
+                itemID = itemID, recipient = ruleRecipient, count = 0, ruleCount = ruleAmount, bagCount = total,
+                droppedOn = droppedOn, attachments = {}, sellPrice = sellPrice or 0,
+            }
         end
     end
     return shipments
