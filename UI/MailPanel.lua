@@ -36,9 +36,16 @@ ns.MailPanel = MailPanel
 ---@field items FlagUp.MailItem[]
 ---@field onDrop fun(itemID: integer) an item dropped on its header or items, or below them when it is the last
 
+---An alt with nothing to receive yet, shown as a tab beside the panel.
+---@class FlagUp.MailAlt
+---@field name string
+---@field class string? its class file name, for its icon; nil until it logs in with Flag Up
+---@field onDrop fun(itemID: integer) an item dropped on its tab
+
 ---What the mailbox would send, ready to show.
 ---@class FlagUp.MailPreview
 ---@field groups FlagUp.MailGroup[] empty: nothing to send
+---@field alts FlagUp.MailAlt[] the known characters without a group, by name
 ---@field mails integer
 ---@field postage integer in copper
 
@@ -85,6 +92,15 @@ local ATTACHMENTS_PER_ROW = 9
 local MAIL_ERROR_HEIGHT = 14
 local MAIL_BOTTOM_PADDING = 8
 local DIMMED_ALPHA = 0.5
+-- The space around the list's hint under its items.
+local HINT_PADDING = 4
+-- The alt tabs: down the panel's right edge, below its title, the tab art's padding on the right.
+local ALT_TABS_X, ALT_TABS_TOP, ALT_TAB_GAP = -2, -36, 0
+-- As large as the community frame's tab icons; an icon file's own border trimmed off.
+local ALT_TAB_ICON_SIZE = 34
+local ICON_BORDER_TRIM = 0.07
+local CLASS_ICONS_TEXTURE = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
+local UNKNOWN_CLASS_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 -- Panel ------------------------------------------------------------------------------------------
 
@@ -126,6 +142,13 @@ list.Empty = list:CreateFontString(nil, "OVERLAY", "GameFontDisable")
 list.Empty:SetPoint("LEFT", 12, 0)
 list.Empty:SetPoint("RIGHT", -12, 0)
 list.Empty:SetText(L["Nothing to send."])
+
+-- How to add an item by hand, under the items; the items end above it, however many lines it takes.
+list.Hint = list:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+list.Hint:SetPoint("BOTTOMLEFT", 6, HINT_PADDING)
+list.Hint:SetPoint("RIGHT", -6, 0)
+list.Hint:SetJustifyH("LEFT")
+list.Hint:SetText(L["Drop an item on a recipient, or on the tab of an alt with nothing to receive yet, to add all of it in your bags to that alt's mail, this time only."])
 
 ---An item's row; createItemRow adds its regions the first time the row is used.
 ---@class FlagUp.MailItemRow: Frame
@@ -341,6 +364,85 @@ if listDrop then
     listDrop:SetScript("OnHide", function() lightHeader(nil) end)
 end
 
+-- Alt tabs ---------------------------------------------------------------------------------------
+
+---A tab beside the panel: an alt with nothing to receive yet, to drop an item on.
+---@class FlagUp.AltTab: Frame
+---@field Icon Texture
+---@field TabGlow Texture
+---@field TabGlowAnimation AnimationGroup
+---@field SetChecked fun(self: FlagUp.AltTab, checked: boolean)
+---@field SetCustomOnMouseUpHandler fun(self: FlagUp.AltTab, handler: fun())
+---@field alt FlagUp.MailAlt the alt shown
+
+---@type FlagUp.AltTab[]
+local altTabs = {}
+
+---The tab at a place down the panel's edge, created the first time.
+---@param index integer
+---@return FlagUp.AltTab
+local function altTab(index)
+    if altTabs[index] then return altTabs[index] end
+    local tab = CreateFrame("Frame", nil, panel, "LargeSideTabButtonTemplate") --[[@as FlagUp.AltTab]]
+    tab:SetPoint("TOPLEFT", panel, "TOPRIGHT", ALT_TABS_X, ALT_TABS_TOP - (index - 1) * (tab:GetHeight() + ALT_TAB_GAP))
+    tab:SetChecked(false)
+    tab:EnableMouse(true)
+    tab.Icon:SetSize(ALT_TAB_ICON_SIZE, ALT_TAB_ICON_SIZE)
+
+    -- An item dropped on the tab, or clicked onto it, goes to its alt.
+    local function drop()
+        local kind, itemID = GetCursorInfo()
+        if kind ~= "item" then return end
+        ClearCursor()
+        tab.alt.onDrop(itemID)
+    end
+    tab:SetScript("OnReceiveDrag", drop)
+    tab:SetCustomOnMouseUpHandler(drop)
+
+    -- The alt's name and what a drop does; the tab glows while an item is held over it.
+    tab:SetScript("OnEnter", function()
+        GameTooltip:SetOwner(tab, "ANCHOR_RIGHT")
+        GameTooltip:SetText(ns.Characters.ShownName(tab.alt.name), HIGHLIGHT_FONT_COLOR:GetRGB())
+        GameTooltip:AddLine(L["Drop an item to add all of it in your bags to this alt's mail, this time only."], nil, nil,
+            nil, true)
+        GameTooltip:Show()
+        if GetCursorInfo() == "item" then tab.TabGlowAnimation:Play() end
+    end)
+    tab:SetScript("OnLeave", function()
+        GameTooltip_Hide()
+        tab.TabGlowAnimation:Stop()
+        tab.TabGlow:SetAlpha(0)
+    end)
+
+    altTabs[index] = tab
+    return tab
+end
+
+---Shows a tab for each alt, as many as the panel's height holds; nil: none.
+---@param alts FlagUp.MailAlt[]?
+local function showAltTabs(alts)
+    alts = alts or {}
+    local fits = math.max(0, math.floor((panel:GetHeight() + ALT_TABS_TOP) / (altTab(1):GetHeight() + ALT_TAB_GAP)))
+    for index = 1, math.max(#alts, #altTabs) do
+        local alt = index <= fits and alts[index] or nil
+        if alt then
+            local tab = altTab(index)
+            tab.alt = alt
+            local coords = alt.class and CLASS_ICON_TCOORDS[alt.class]
+            if coords then
+                tab.Icon:SetTexture(CLASS_ICONS_TEXTURE)
+                tab.Icon:SetTexCoord(unpack(coords))
+            else
+                tab.Icon:SetTexture(UNKNOWN_CLASS_ICON)
+                tab.Icon:SetTexCoord(ICON_BORDER_TRIM, 1 - ICON_BORDER_TRIM, ICON_BORDER_TRIM, 1 - ICON_BORDER_TRIM)
+            end
+            tab:Show()
+        elseif altTabs[index] then
+            altTabs[index]:Hide()
+        end
+    end
+end
+
 -- Sending ----------------------------------------------------------------------------------------
 
 local sendingList = createList()
@@ -534,6 +636,8 @@ function panel:ShowPreview(preview)
     end
     list.ScrollBox:SetDataProvider(CreateDataProvider(elements), ScrollBoxConstants.RetainScrollPosition)
     list.Empty:SetShown(#elements == 0)
+    list.ScrollBox:SetPoint("BOTTOMRIGHT", -SCROLL_BAR_SPACE, list.Hint:GetStringHeight() + 2 * HINT_PADDING)
+    showAltTabs(preview.alts)
 
     -- The mail count, then the postage under it.
     panel.Summary:SetText(mailCount(preview.mails) .. "\n" .. L["Postage: %s"]:format(GetMoneyString(preview.postage)))
@@ -545,6 +649,7 @@ end
 function panel:ShowSending(mails)
     showingSending = true
     list:Hide()
+    showAltTabs(nil)
     sendingList:Show()
     panel.SendButton:Hide()
     panel.StopButton:Show()
@@ -583,6 +688,20 @@ local amounts = {}
 ---@type table<integer, string> the items dropped on a recipient during this visit to the mailbox, by item ID: the
 ---recipient
 local dropped = {}
+
+---An item dropped on a recipient, its header or tab: it goes there, all of it, checked; one that can't be mailed is
+---refused, in red.
+---@param recipient string
+---@param itemID integer
+local function dropOn(recipient, itemID)
+    if not ns.Mailing.Mailable(itemID) then
+        showDropError(L["This item can't be mailed: it is bound or in an equipment set."])
+        return
+    end
+    showDropError(nil)
+    dropped[itemID], amounts[itemID], choices[itemID] = recipient, nil, true
+    MailPanel.Refresh()
+end
 
 ---Whether an item goes: as checked or unchecked by hand this visit, else as the settings judge its worth.
 ---@param shipment FlagUp.Shipment
@@ -650,17 +769,8 @@ local function mailPreview()
         local recipient, itemID = shipment.recipient, shipment.itemID
         local group = groupsByRecipient[recipient]
         if not group then
-            -- An item dropped on the header goes to this recipient, all of it, checked; one that can't be mailed is
-            -- refused, in red.
-            group = { recipient = recipient, mails = 0, items = {}, onDrop = function(droppedID)
-                if not ns.Mailing.Mailable(droppedID) then
-                    showDropError(L["This item can't be mailed: it is bound or in an equipment set."])
-                    return
-                end
-                showDropError(nil)
-                dropped[droppedID], amounts[droppedID], choices[droppedID] = recipient, nil, true
-                MailPanel.Refresh()
-            end }
+            group = { recipient = recipient, mails = 0, items = {},
+                onDrop = function(droppedID) dropOn(recipient, droppedID) end }
             groupsByRecipient[recipient] = group
         end
 
@@ -705,7 +815,7 @@ local function mailPreview()
 
     -- The mails, as they will go.
     local parcels = ns.Mailing.Parcels(checkedShipments)
-    local preview = { groups = {}, mails = #parcels, postage = 0 }
+    local preview = { groups = {}, alts = {}, mails = #parcels, postage = 0 }
     for _, parcel in ipairs(parcels) do
         groupsByRecipient[parcel.recipient].mails = groupsByRecipient[parcel.recipient].mails + 1
         preview.postage = preview.postage + ns.Mailing.Postage(#parcel.attachments)
@@ -715,6 +825,17 @@ local function mailPreview()
         preview.groups[#preview.groups + 1] = group
     end
     table.sort(preview.groups, function(a, b) return a.recipient < b.recipient end)
+
+    -- The known characters this one can mail that have nothing to receive yet: a tab each, by name.
+    local player = ns.Characters.PlayerName()
+    for _, name in ipairs(ns.Characters.KnownNames()) do
+        if not groupsByRecipient[name] and ns.Characters.CanMail(player, name) then
+            preview.alts[#preview.alts + 1] = {
+                name = name, class = ns.Characters.Class(name),
+                onDrop = function(itemID) dropOn(name, itemID) end,
+            }
+        end
+    end
     return preview
 end
 

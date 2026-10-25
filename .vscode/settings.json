@@ -45,7 +45,8 @@
         "PanelTemplates_SetTab",
         "PanelTemplates_TabResize",
         "WOW_PROJECT_CAMELOT",
-        "C_AutoComplete"
+        "C_AutoComplete",
+        "CLASS_ICON_TCOORDS"
     ],
     "Lua.type.weakUnionCheck": true
 }

@@ -12,6 +12,7 @@ ns.Characters = Characters
 ---@field guid string? the character's GUID, saved when it logs in: it stays the same when the character is renamed
 ---@field faction string? "Alliance" or "Horde": its own once it logs in; typed, the faction of the character that
 ---typed it
+---@field class string? the class file name ("WARRIOR"), saved when it logs in
 
 ---The characters and rules of the characters mail reaches: on Forever, one ruleset and faction; elsewhere, a realm and
 ---the realms connected to it, both factions.
@@ -195,7 +196,8 @@ function Characters.RecordPlayer()
         ns.Ignored.RenameCharacter(oldName, name)
     end
 
-    characters[name] = { typed = false, guid = guid, faction = UnitFactionGroup("player") }
+    characters[name] = { typed = false, guid = guid, faction = UnitFactionGroup("player"),
+        class = select(2, UnitClass("player")) }
 end
 
 ---Whether mail goes from one character of the household to another. Never to itself. Outside Forever, mail crosses
@@ -221,6 +223,14 @@ function Characters.KnownNames()
     end
     table.sort(names)
     return names
+end
+
+---A character's class file name ("WARRIOR"), once it has logged in with Flag Up.
+---@param name string
+---@return string?
+function Characters.Class(name)
+    local character = Characters.PlayerHousehold().characters[name]
+    return character and character.class
 end
 
 ---Adds a character typed by the player to the household being played, of the faction being played; a character already

@@ -67,8 +67,9 @@ FlagUpDB = {
         rulesetFactions = {
             ["PvP-Alliance"] = {
                 characters = {            -- recipients, by name
-                    ["Lyra Moonfield"] = { typed = false, guid = "Player-4613-00D061FC" },  -- known: logged in with Flag Up
-                    ["Kael Duskwhisper"] = { typed = true },  -- typed by the player
+                    ["Lyra Moonfield"] = { typed = false, guid = "Player-4613-00D061FC", faction = "Alliance",
+                        class = "MAGE" },  -- known: logged in with Flag Up
+                    ["Kael Duskwhisper"] = { typed = true, faction = "Alliance" },  -- typed by the player
                 },
                 ignored = {               -- never offered at the mailbox
                     all = { [2589] = true },                                -- by item ID: by every character

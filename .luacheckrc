@@ -27,4 +27,5 @@ read_globals = {
     "CursorHasItem", "C_Timer", "BACK", "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown",
     "PanelTemplates_TabResize", "PanelTemplates_SetNumTabs", "PanelTemplates_SetTab",
     "WOW_PROJECT_ID", "WOW_PROJECT_CAMELOT", "GetNormalizedRealmName", "C_AutoComplete", "GetAutoCompleteRealms",
+    "UnitClass", "CLASS_ICON_TCOORDS",
 }
