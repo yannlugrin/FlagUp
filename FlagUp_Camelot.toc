@@ -29,9 +29,12 @@ Core\Mailing.lua
 
 UI\Skin.lua
 UI\TreeRow.lua
+UI\CharacterIcon.lua
 UI\ItemDrop.lua
 UI\RulesWindow.lua
 UI\IgnoredList.lua
+UI\CharacterList.lua
+UI\IconPicker.lua
 UI\AddItemDialog.lua
 UI\AddCategoryDialog.lua
 UI\CharacterNameDialog.lua

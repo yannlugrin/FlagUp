@@ -4,6 +4,7 @@ local addonName, ns = ...
 ---The add-on's private table, shared by every file.
 ---@class FlagUp.Namespace
 ---@field L table<string, string>
+---@field IS_FOREVER boolean playing WoW: Forever
 ---@field Print fun(msg: string)
 ---@field db table AceDB object
 ---@field data FlagUp.Data
@@ -16,9 +17,12 @@ local addonName, ns = ...
 ---@field Mailing FlagUp.Mailing
 ---@field Skin FlagUp.Skin
 ---@field TreeRow FlagUp.TreeRow
+---@field CharacterIcon FlagUp.CharacterIcon
 ---@field ItemDrop FlagUp.ItemDrop
 ---@field RulesWindow FlagUp.RulesWindow
 ---@field IgnoredList FlagUp.IgnoredList
+---@field CharacterList FlagUp.CharacterList
+---@field IconPicker FlagUp.IconPicker
 ---@field AddItemDialog FlagUp.AddItemDialog
 ---@field AddCategoryDialog FlagUp.AddCategoryDialog
 ---@field CharacterNameDialog FlagUp.CharacterNameDialog
@@ -27,6 +31,8 @@ local addonName, ns = ...
 ---@field MailPanel FlagUp.MailPanel
 
 ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
+-- Forever runs the retail API; its characters, households and professions differ.
+ns.IS_FOREVER = WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
 local L = ns.L
 
 local title = C_AddOns.GetAddOnMetadata(addonName, "Title")

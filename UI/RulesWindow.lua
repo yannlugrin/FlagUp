@@ -451,13 +451,14 @@ local function ruleDetail(shown)
     return detail
 end
 
----Shows the rules in the tree again, the selected line in the pane and the ignored items; the mailbox panel, open,
----follows the rules.
+---Shows the rules in the tree again, the selected line in the pane, the ignored items and the characters; the mailbox
+---panel, open, follows the rules.
 function RulesWindow.Refresh()
     window:ShowLines(rulesTreeLines())
     local shown = selectedID and shownLines[selectedID]
     window:ShowRule(shown and ruleDetail(shown) or nil)
     ns.IgnoredList.Refresh()
+    ns.CharacterList.Refresh()
     ns.MailPanel.Refresh()
 end
 
@@ -1180,14 +1181,14 @@ end)
 
 -- Tabs -------------------------------------------------------------------------------------------
 
--- The game's tabs under the window: the rules, and the ignored items. Named: the game's tab functions find a
--- window's tabs by name.
-local RULES_TAB, IGNORED_TAB = 1, 2
+-- The game's tabs under the window: the rules, the ignored items, the characters. Named: the game's tab functions
+-- find a window's tabs by name.
+local RULES_TAB, IGNORED_TAB, CHARACTERS_TAB = 1, 2, 3
 local TAB_LEFT, TAB_TOP, TAB_GAP = 11, 2, 3
 
 ---@type Button[]
 window.Tabs = {}
-for index, title in ipairs({ L["Rules"], L["Ignored"] }) do
+for index, title in ipairs({ L["Rules"], L["Ignored"], L["Characters"] }) do
     local tab = CreateFrame("Button", "FlagUpRulesWindowTab" .. index, window, "PanelTabButtonTemplate")
     tab:SetID(index)
     tab:SetText(title)
@@ -1201,7 +1202,7 @@ for index, title in ipairs({ L["Rules"], L["Ignored"] }) do
 end
 PanelTemplates_SetNumTabs(window, #window.Tabs)
 
----Shows a tab: the toolbar, the tree and the pane on the Rules tab; the list on the Ignored tab.
+---Shows a tab: the toolbar, the tree and the pane on the Rules tab; a list on the Ignored and Characters tabs.
 ---@param index integer
 local function showTab(index)
     PanelTemplates_SetTab(window, index)
@@ -1209,6 +1210,7 @@ local function showTab(index)
         region:SetShown(index == RULES_TAB)
     end
     ns.IgnoredList.View:SetShown(index == IGNORED_TAB)
+    ns.CharacterList.View:SetShown(index == CHARACTERS_TAB)
 end
 
 for _, tab in ipairs(window.Tabs) do
@@ -1222,7 +1224,7 @@ function RulesWindow.ShowIgnored(classID, subClassID)
     ns.IgnoredList.ShowCategory(classID, subClassID)
 end
 
--- The window opens on the Rules tab; the Ignored list, loaded after this file, starts hidden.
+-- The window opens on the Rules tab; the Ignored and Characters lists, loaded after this file, start hidden.
 PanelTemplates_SetTab(window, RULES_TAB)
 
 -- Skin -------------------------------------------------------------------------------------------

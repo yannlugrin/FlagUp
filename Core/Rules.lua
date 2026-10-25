@@ -223,6 +223,34 @@ function Rules.JoinLines(lines, other)
     joinAll(lines.items, other.items)
 end
 
+---Whether a line or an override sends to a character.
+---@param name string
+---@return boolean
+function Rules.SendsTo(name)
+    ---@param line FlagUp.Line
+    local function sends(line)
+        if line.sendTo == name then return true end
+        for _, override in pairs(line.overrides or {}) do
+            if override.sendTo == name then return true end
+        end
+        return false
+    end
+
+    local lines = Rules.Lines()
+    for _, line in pairs(lines.categories) do
+        if sends(line) then return true end
+    end
+    for _, subcategories in pairs(lines.subcategories) do
+        for _, line in pairs(subcategories) do
+            if sends(line) then return true end
+        end
+    end
+    for _, line in pairs(lines.items) do
+        if sends(line) then return true end
+    end
+    return false
+end
+
 -- Editing ----------------------------------------------------------------------------------------
 
 ---Whether a line, or a character's override of it, sets any field.

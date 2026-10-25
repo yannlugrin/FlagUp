@@ -41,9 +41,12 @@ FlagUp/
 ├── UI/
 │   ├── Skin.lua                   Bridge to EllesmereUI's skinning functions, applied once it hands them over
 │   ├── TreeRow.lua                The category tree rows, shared by the rules tree and the Add category dialog
+│   ├── CharacterIcon.lua          A character's icon: chosen, else its class's, else a question mark
 │   ├── ItemDrop.lua               Items dropped anywhere on a frame: the rules window and the Add item dialog
 │   ├── RulesWindow.lua            The rules window: frame, toolbar, tree (ShowLines), right pane (ShowRule), tabs
 │   ├── IgnoredList.lua            The rules window's Ignored tab: the ignored items, filtered by category, to take back
+│   ├── CharacterList.lua          The rules window's Characters tab: shown at the mailbox, icon, typed ones to forget
+│   ├── IconPicker.lua             The game's icon picker for a character's icon, a row of the professions' icons above
 │   ├── AddItemDialog.lua          The Add item dialog: item ID or link field, Add, the error line (ShowError)
 │   ├── AddCategoryDialog.lua      The Add category dialog: filter, the game's categories (ShowLines), Cancel, Add
 │   ├── CharacterNameDialog.lua    The dialog to type a character's name, from the Rule dropdown's Other character…
@@ -68,8 +71,8 @@ FlagUpDB = {
             ["PvP-Alliance"] = {
                 characters = {            -- recipients, by name
                     ["Lyra Moonfield"] = { typed = false, guid = "Player-4613-00D061FC", faction = "Alliance",
-                        class = "MAGE" },  -- known: logged in with Flag Up
-                    ["Kael Duskwhisper"] = { typed = true, faction = "Alliance" },  -- typed by the player
+                        class = "MAGE", icon = 136240 },  -- known: logged in with Flag Up; an icon chosen
+                    ["Kael Duskwhisper"] = { typed = true, faction = "Alliance", atMailbox = true },  -- typed, shown at the mailbox
                 },
                 ignored = {               -- never offered at the mailbox
                     all = { [2589] = true },                                -- by item ID: by every character

@@ -13,6 +13,8 @@ ns.Characters = Characters
 ---@field faction string? "Alliance" or "Horde": its own once it logs in; typed, the faction of the character that
 ---typed it
 ---@field class string? the class file name ("WARRIOR"), saved when it logs in
+---@field atMailbox boolean? it gets a tab beside the mailbox panel; nil: known characters do, typed ones don't
+---@field icon number|string? the icon chosen for it; nil: its class icon
 
 ---The characters and rules of the characters mail reaches: on Forever, one ruleset and faction; elsewhere, a realm and
 ---the realms connected to it, both factions.
@@ -33,7 +35,7 @@ local function ruleset()
 end
 
 -- On Forever, characters have a surname and no realm; elsewhere, their realm, which mail names as "Name-Realm".
-local IS_FOREVER = WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
+local IS_FOREVER = ns.IS_FOREVER
 
 ---Outside Forever: the realm being played and the realms connected to it, which mail reaches, by normalized name.
 ---@return table<string, true>
@@ -225,12 +227,52 @@ function Characters.KnownNames()
     return names
 end
 
----A character's class file name ("WARRIOR"), once it has logged in with Flag Up.
+---A character of the household being played; nil: none of that name.
 ---@param name string
----@return string?
-function Characters.Class(name)
-    local character = Characters.PlayerHousehold().characters[name]
-    return character and character.class
+---@return FlagUp.Character?
+function Characters.Get(name)
+    return Characters.PlayerHousehold().characters[name]
+end
+
+---The names of every character of the household being played, known and typed, by name.
+---@return string[]
+function Characters.AllNames()
+    local names = {}
+    for name in pairs(Characters.PlayerHousehold().characters) do names[#names + 1] = name end
+    table.sort(names)
+    return names
+end
+
+---Whether a character gets a tab beside the mailbox panel: as set on the Characters tab; by default, a known
+---character does and a typed one doesn't.
+---@param name string
+---@return boolean
+function Characters.IsShownAtMailbox(name)
+    local character = Characters.Get(name)
+    if not character then return false end
+    if character.atMailbox ~= nil then return character.atMailbox end
+    return not character.typed
+end
+
+---@param name string
+---@param shown boolean
+function Characters.SetShownAtMailbox(name, shown)
+    local character = Characters.Get(name)
+    if character then character.atMailbox = shown end
+end
+
+---@param name string
+---@param icon number|string|nil nil: its class icon
+function Characters.SetIcon(name, icon)
+    local character = Characters.Get(name)
+    if character then character.icon = icon end
+end
+
+---Forgets a typed character; a known one stays, as it logs in again.
+---@param name string
+function Characters.Forget(name)
+    local characters = Characters.PlayerHousehold().characters
+    if characters[name] and characters[name].typed then characters[name] = nil end
 end
 
 ---Adds a character typed by the player to the household being played, of the faction being played; a character already

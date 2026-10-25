@@ -46,7 +46,13 @@
         "PanelTemplates_TabResize",
         "WOW_PROJECT_CAMELOT",
         "C_AutoComplete",
-        "CLASS_ICON_TCOORDS"
+        "CLASS_ICON_TCOORDS",
+        "IconDataProviderMixin",
+        "IconDataProviderExtraType",
+        "IconSelectorPopupFrameTemplateMixin",
+        "IconSelectorPopupFrameIconFilterTypes",
+        "GenerateClosure",
+        "LOCALIZED_CLASS_NAMES_MALE"
     ],
     "Lua.type.weakUnionCheck": true
 }

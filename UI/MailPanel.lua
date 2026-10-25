@@ -39,13 +39,13 @@ ns.MailPanel = MailPanel
 ---An alt with nothing to receive yet, shown as a tab beside the panel.
 ---@class FlagUp.MailAlt
 ---@field name string
----@field class string? its class file name, for its icon; nil until it logs in with Flag Up
+---@field character FlagUp.Character for its icon
 ---@field onDrop fun(itemID: integer) an item dropped on its tab
 
 ---What the mailbox would send, ready to show.
 ---@class FlagUp.MailPreview
 ---@field groups FlagUp.MailGroup[] empty: nothing to send
----@field alts FlagUp.MailAlt[] the known characters without a group, by name
+---@field alts FlagUp.MailAlt[] the characters shown at the mailbox without a group, by name
 ---@field mails integer
 ---@field postage integer in copper
 
@@ -96,11 +96,8 @@ local DIMMED_ALPHA = 0.5
 local HINT_PADDING = 4
 -- The alt tabs: down the panel's right edge, below its title, the tab art's padding on the right.
 local ALT_TABS_X, ALT_TABS_TOP, ALT_TAB_GAP = -2, -36, 0
--- As large as the community frame's tab icons; an icon file's own border trimmed off.
+-- As large as the community frame's tab icons.
 local ALT_TAB_ICON_SIZE = 34
-local ICON_BORDER_TRIM = 0.07
-local CLASS_ICONS_TEXTURE = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
-local UNKNOWN_CLASS_ICON = "Interface\\Icons\\INV_Misc_QuestionMark"
 
 -- Panel ------------------------------------------------------------------------------------------
 
@@ -428,14 +425,7 @@ local function showAltTabs(alts)
         if alt then
             local tab = altTab(index)
             tab.alt = alt
-            local coords = alt.class and CLASS_ICON_TCOORDS[alt.class]
-            if coords then
-                tab.Icon:SetTexture(CLASS_ICONS_TEXTURE)
-                tab.Icon:SetTexCoord(unpack(coords))
-            else
-                tab.Icon:SetTexture(UNKNOWN_CLASS_ICON)
-                tab.Icon:SetTexCoord(ICON_BORDER_TRIM, 1 - ICON_BORDER_TRIM, ICON_BORDER_TRIM, 1 - ICON_BORDER_TRIM)
-            end
+            ns.CharacterIcon.Show(tab.Icon, alt.character)
             tab:Show()
         elseif altTabs[index] then
             altTabs[index]:Hide()
@@ -826,12 +816,14 @@ local function mailPreview()
     end
     table.sort(preview.groups, function(a, b) return a.recipient < b.recipient end)
 
-    -- The known characters this one can mail that have nothing to receive yet: a tab each, by name.
+    -- The characters shown at the mailbox that this one can mail and that have nothing to receive yet: a tab each, by
+    -- name.
     local player = ns.Characters.PlayerName()
-    for _, name in ipairs(ns.Characters.KnownNames()) do
-        if not groupsByRecipient[name] and ns.Characters.CanMail(player, name) then
+    for _, name in ipairs(ns.Characters.AllNames()) do
+        local shown = ns.Characters.IsShownAtMailbox(name) and ns.Characters.CanMail(player, name)
+        if shown and not groupsByRecipient[name] then
             preview.alts[#preview.alts + 1] = {
-                name = name, class = ns.Characters.Class(name),
+                name = name, character = ns.Characters.Get(name) --[[@as FlagUp.Character]],
                 onDrop = function(itemID) dropOn(name, itemID) end,
             }
         end

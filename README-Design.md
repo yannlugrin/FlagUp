@@ -98,7 +98,7 @@ A panel attached to the right of the mailbox, open with it.
 - The items to send, grouped by recipient, each group with its number of mails. Each item has a checkbox: unchecked, it stays in the bags this time only. Its count is a number box: the count typed goes this time only, up to what the bags hold, in place of the rules' (Keep and Full stacks only no longer apply to it), and shows in gold; its tooltip gives how many the bags hold, and how many the rules keep (when they keep some), or send when set by hand; 0 unchecks the item; emptied, it goes back to the rules' count. At the end of its row, an **Ignore** button (the game's loot Pass glyph) opens the game's popup: **All characters**, **Only <character being played>**, **Cancel**; the item leaves the list at once.
 - An item dropped on a recipient's heading or items (below the last recipient's items, for that one) goes to that recipient, all of it in the bags, checked, this time only, whatever the rules, an ignored item too. An item they send to another recipient keeps its row there, at 0: unchecked, its checkbox and count disabled, the checkbox's tooltip *Dropped on <recipient>: all of it goes there.* Dropped on the recipient they send it to, its row becomes the dropped one. Its row reads *by hand* after its name, and a remove cross (the Ignored tab's) takes the place of **Ignore**: it goes back to what the rules do with it, its row at 0 included. Its count's tooltip gives how many the bags hold. An item that can't be mailed (bound, or in an equipment set) is refused: *This item can't be mailed: it is bound or in an equipment set.*, in red above the number of mails, until the next drop or the next visit. The recipient's heading lights up while an item is held over it.
 - Under the items, in grey: *Drop an item on a recipient, or on the tab of an alt with nothing to receive yet, to add all of it in your bags to that alt's mail, this time only.*
-- Down the panel's right edge, the game's side tabs (as the quest log's): one per known character the one being played can mail, with nothing to receive yet (no heading in the list), by name, as many as the panel's height holds. Each shows its class icon (a question mark until it logs in with Flag Up); its tooltip gives its name and *Drop an item to add all of it in your bags to this alt's mail, this time only.* An item dropped on it goes as on a heading; the alt then has a heading, and no tab. A tab glows while an item is held over it. The tabs hide while mail is being sent.
+- Down the panel's right edge, the game's side tabs (as the quest log's): one per character shown at the mailbox (frame 11) that the one being played can mail, with nothing to receive yet (no heading in the list), by name, as many as the panel's height holds. Each shows its icon (frame 11); its tooltip gives its name and *Drop an item to add all of it in your bags to this alt's mail, this time only.* An item dropped on it goes as on a heading; the alt then has a heading, and no tab. A tab glows while an item is held over it. The tabs hide while mail is being sent.
 - At the bottom: the number of mails, the postage, and **Send**.
 
 With automatic sending on (or the send key held while it is off), the panel opens on frame 8 instead.
@@ -124,6 +124,22 @@ The items ignored in the household being played, by every character or by one.
 
 - A dropdown filters the list: *All categories*, then the categories and subcategories that hold ignored items. While a filter is set, the rows' cross in grey, red under the mouse, at its right goes back to *All categories*.
 - Columns *Item* (icon and name in its quality colour) and *Ignored by* (*All characters*, or the character's name); an item ignored by every character and by a character has a row for each. A red cross (the game's ready check cross) at the end of the row takes the item back.
+
+### 11. Rules Window — Characters Tab
+
+The characters sharing these rules (the household being played), by name.
+
+- At the top: *The characters sharing these rules. Checked ones get a tab beside the mailbox panel, with their icon.*
+- Columns: *At the mailbox* (a checkbox: the character gets a tab beside the mailbox panel; on by default for a known character, off for a typed one), *Icon*, *Character*, *Class* (*Unknown* until it logs in with Flag Up), *Known or typed*. At the end of the row, **Change icon** (frame 12); on a typed character, **Forget**, disabled while a rule or an override sends to it, its tooltip *A rule sends to <character>: change that rule first to forget it.*
+- A character's icon: the one chosen for it, else its class icon, else a question mark.
+- At the bottom, in grey: *A typed character starts hidden at the mailbox; its class is unknown until it logs in with Flag Up, so its icon is a question mark until you choose one. Characters by name.*
+
+### 12. Icon for a Character (Dialog)
+
+The game's icon picker, as for equipment sets, centred over the rules window; its title *Icon for <character>*.
+
+- *Professions*: a row of the professions' icons, above the game's icon list and its filter (all, spells, items); dropping an item or a spell on the list takes its icon. The question mark means no icon chosen.
+- **Class icon** at the bottom left: back to the class icon. **Okay** keeps the icon selected, **Cancel** changes nothing.
 
 ## Commands
 
