@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Announces a release on Discord: the version's section of CHANGELOG.md, linked to CurseForge and to the GitHub
+# Announces a release on Discord: the version's section of CHANGELOG.md, linked to CurseForge, Wago and the GitHub
 # release. Run from the repository root by the release workflow, or by the "Announce on Discord" workflow to post one
 # again. Needs DISCORD_WEBHOOK_URL (the webhook of the channel to post in) and GITHUB_REPOSITORY; without the webhook,
 # nothing is posted.
@@ -26,12 +26,13 @@ fi
 if [ "${#notes}" -gt 3900 ]; then notes="${notes:0:3900}…"; fi
 
 url="https://www.curseforge.com/wow/addons/flag-up"
+wago="https://addons.wago.io/addons/flag-up-alt-mailer"
 release="https://github.com/$GITHUB_REPOSITORY/releases/tag/$version"
-jq -n --arg title "Flag Up $version" --arg url "$url" --arg release "$release" --arg notes "$notes" '{
+jq -n --arg title "Flag Up $version" --arg url "$url" --arg wago "$wago" --arg release "$release" --arg notes "$notes" '{
   embeds: [{
     title: $title,
     url: $url,
-    description: ($notes + "\n\n[Download on CurseForge](" + $url + ")\n[GitHub release](" + $release + ")"),
+    description: ($notes + "\n\n[Download on CurseForge](" + $url + ")\n[Download on Wago](" + $wago + ")\n[GitHub release](" + $release + ")"),
     color: 6732799
   }]
 }' | curl -fsS -H "Content-Type: application/json" -d @- "$DISCORD_WEBHOOK_URL"
