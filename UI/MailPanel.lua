@@ -94,10 +94,8 @@ local MAIL_BOTTOM_PADDING = 8
 local DIMMED_ALPHA = 0.5
 -- The space around the list's hint under its items.
 local HINT_PADDING = 4
--- The alt tabs: down the panel's right edge, below its title, the tab art's padding on the right.
-local ALT_TABS_X, ALT_TABS_TOP, ALT_TAB_GAP = -2, -36, 0
--- As large as the community frame's tab icons.
-local ALT_TAB_ICON_SIZE = 34
+-- The alt tabs: down the panel's right edge, below its title.
+local ALT_TABS_TOP = -36
 -- The rules window's tab, at the bottom of the panel's right edge, below the alt tabs.
 local RULES_TAB_BOTTOM = 8
 local ADDON_ICON = "Interface\\AddOns\\" .. addonName .. "\\Media\\Icon"
@@ -367,12 +365,7 @@ end
 -- Alt tabs ---------------------------------------------------------------------------------------
 
 ---A tab beside the panel: an alt with nothing to receive yet, to drop an item on.
----@class FlagUp.AltTab: Frame
----@field Icon Texture
----@field TabGlow Texture
----@field TabGlowAnimation AnimationGroup
----@field SetChecked fun(self: FlagUp.AltTab, checked: boolean)
----@field SetCustomOnMouseUpHandler fun(self: FlagUp.AltTab, handler: fun())
+---@class FlagUp.AltTab: FlagUp.SideTab.Tab
 ---@field alt FlagUp.MailAlt the alt shown
 
 ---@type FlagUp.AltTab[]
@@ -383,11 +376,9 @@ local altTabs = {}
 ---@return FlagUp.AltTab
 local function altTab(index)
     if altTabs[index] then return altTabs[index] end
-    local tab = CreateFrame("Frame", nil, panel, "LargeSideTabButtonTemplate") --[[@as FlagUp.AltTab]]
-    tab:SetPoint("TOPLEFT", panel, "TOPRIGHT", ALT_TABS_X, ALT_TABS_TOP - (index - 1) * (tab:GetHeight() + ALT_TAB_GAP))
-    tab:SetChecked(false)
-    tab:EnableMouse(true)
-    tab.Icon:SetSize(ALT_TAB_ICON_SIZE, ALT_TAB_ICON_SIZE)
+    local tab = ns.SideTab.New(panel) --[[@as FlagUp.AltTab]]
+    tab:SetPoint("TOPLEFT", panel, "TOPRIGHT", ns.SideTab.X,
+        ALT_TABS_TOP - (index - 1) * (tab:GetHeight() + ns.SideTab.GAP))
 
     -- An item dropped on the tab, or clicked onto it, goes to its alt.
     local function drop()
@@ -397,7 +388,7 @@ local function altTab(index)
         tab.alt.onDrop(itemID)
     end
     tab:SetScript("OnReceiveDrag", drop)
-    tab:SetCustomOnMouseUpHandler(drop)
+    ns.SideTab.SetOnClick(tab, drop)
 
     -- The alt's name and what a drop does; the tab glows while an item is held over it.
     tab:SetScript("OnEnter", function()
@@ -406,12 +397,11 @@ local function altTab(index)
         GameTooltip:AddLine(L["Drop an item to add all of it in your bags to this alt's mail, this time only."], nil, nil,
             nil, true)
         GameTooltip:Show()
-        if GetCursorInfo() == "item" then tab.TabGlowAnimation:Play() end
+        ns.SideTab.SetLit(tab, GetCursorInfo() == "item")
     end)
     tab:SetScript("OnLeave", function()
         GameTooltip_Hide()
-        tab.TabGlowAnimation:Stop()
-        tab.TabGlow:SetAlpha(0)
+        ns.SideTab.SetLit(tab, false)
     end)
 
     altTabs[index] = tab
@@ -419,13 +409,10 @@ local function altTab(index)
 end
 
 -- The rules window's tab: Flag Up's icon; a click opens or closes the rules window.
-local rulesTab = CreateFrame("Frame", nil, panel, "LargeSideTabButtonTemplate") --[[@as FlagUp.AltTab]]
-rulesTab:SetPoint("BOTTOMLEFT", panel, "BOTTOMRIGHT", ALT_TABS_X, RULES_TAB_BOTTOM)
-rulesTab:SetChecked(false)
-rulesTab:EnableMouse(true)
-rulesTab.Icon:SetSize(ALT_TAB_ICON_SIZE, ALT_TAB_ICON_SIZE)
+local rulesTab = ns.SideTab.New(panel)
+rulesTab:SetPoint("BOTTOMLEFT", panel, "BOTTOMRIGHT", ns.SideTab.X, RULES_TAB_BOTTOM)
 rulesTab.Icon:SetTexture(ADDON_ICON)
-rulesTab:SetCustomOnMouseUpHandler(function() ns.RulesWindow.Toggle() end)
+ns.SideTab.SetOnClick(rulesTab, function() ns.RulesWindow.Toggle() end)
 rulesTab:SetScript("OnEnter", function()
     GameTooltip:SetOwner(rulesTab, "ANCHOR_RIGHT")
     GameTooltip:SetText(C_AddOns.GetAddOnMetadata(addonName, "Title"), HIGHLIGHT_FONT_COLOR:GetRGB())
@@ -438,8 +425,8 @@ rulesTab:SetScript("OnLeave", GameTooltip_Hide)
 ---@param alts FlagUp.MailAlt[]?
 local function showAltTabs(alts)
     alts = alts or {}
-    local step = altTab(1):GetHeight() + ALT_TAB_GAP
-    local room = panel:GetHeight() + ALT_TABS_TOP - RULES_TAB_BOTTOM - rulesTab:GetHeight() - ALT_TAB_GAP
+    local step = altTab(1):GetHeight() + ns.SideTab.GAP
+    local room = panel:GetHeight() + ALT_TABS_TOP - RULES_TAB_BOTTOM - rulesTab:GetHeight() - ns.SideTab.GAP
     local fits = math.max(0, math.floor(room / step))
     for index = 1, math.max(#alts, #altTabs) do
         local alt = index <= fits and alts[index] or nil

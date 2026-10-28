@@ -26,8 +26,8 @@ read_globals = {
     "C_Container", "BACKPACK_CONTAINER", "NUM_BAG_SLOTS", "NUM_TOTAL_EQUIPPED_BAG_SLOTS", "ClearSendMail", "ClickSendMailItemButton", "SendMail",
     "CursorHasItem", "C_Timer", "BACK", "IsShiftKeyDown", "IsControlKeyDown", "IsAltKeyDown",
     "PanelTemplates_TabResize", "PanelTemplates_SetNumTabs", "PanelTemplates_SetTab",
-    "WOW_PROJECT_ID", "WOW_PROJECT_CAMELOT", "GetNormalizedRealmName", "C_AutoComplete", "GetAutoCompleteRealms",
+    "WOW_PROJECT_ID", "WOW_PROJECT_CAMELOT", "WOW_PROJECT_MAINLINE", "GetNormalizedRealmName", "C_AutoComplete", "GetAutoCompleteRealms",
     "UnitClass", "CLASS_ICON_TCOORDS", "LOCALIZED_CLASS_NAMES_MALE",
     "IconSelectorPopupFrameTemplateMixin", "IconSelectorPopupFrameIconFilterTypes", "IconDataProviderMixin",
-    "IconDataProviderExtraType", "CreateAndInitFromMixin", "GenerateClosure", "C_TradeSkillUI",
+    "IconDataProviderExtraType", "CreateAndInitFromMixin", "GenerateClosure", "C_TradeSkillUI", "C_Texture",
 }

@@ -1,6 +1,6 @@
 # Contributing to Flag Up
 
-Thanks for helping. Flag Up is an add-on for **World of Warcraft: Forever** and **retail**; the other flavors are not supported. Each has its TOC (`FlagUp_Camelot.toc`, `FlagUp_Mainline.toc`), with the same file list.
+Thanks for helping. Flag Up is an add-on for **World of Warcraft: Forever**, **retail**, **Classic Era** and **TBC Anniversary**; the other flavors are not supported. Each has its TOC (`FlagUp_Camelot.toc`, `FlagUp_Mainline.toc`, `FlagUp_Vanilla.toc`, `FlagUp_TBC.toc`), with the same file list but for the files written for retail and Forever (`_Mainline`) or for Classic Era and TBC Anniversary (`_Classic`) (see [README-Technical.md](README-Technical.md#flavors)).
 
 ## Reporting a problem
 
@@ -8,7 +8,7 @@ Open an issue with what you did, what you expected and what happened, and the ru
 
 ## Setting up
 
-1. Clone the repository and link it into the client's `Interface\AddOns` folder (Forever or retail) under the name `FlagUp`, for example on Windows (cmd):
+1. Clone the repository and link it into the client's `Interface\AddOns` folder (Forever, retail, Classic Era or TBC Anniversary) under the name `FlagUp`, for example on Windows (cmd):
    ```
    mklink /J "<client>\Interface\AddOns\FlagUp" "<clone>"
    ```

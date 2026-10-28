@@ -1,6 +1,6 @@
 # Flag Up // In-Game Test Plan
 
-Manual tests in the Forever and retail clients, for what can't be checked offline: the real game API and the server. For the code, see [README-Technical.md](README-Technical.md).
+Manual tests in the Forever, retail, Classic Era and TBC Anniversary clients, for what can't be checked offline: the real game API and the server. For the code, see [README-Technical.md](README-Technical.md).
 
 ## Setup
 
@@ -11,6 +11,14 @@ Manual tests in the Forever and retail clients, for what can't be checked offlin
 
 - Mail to a character of the same realm, shown without its realm, and of a connected realm, shown as "Name-Realm".
 - Mail to the player's own character of the other faction, on the same realm.
+
+## Classic Era and TBC Anniversary
+
+Tested on Classic Era, on a Season of Discovery realm; Hardcore realms run the same client. TBC Anniversary not tested yet: its client is the same as Classic Era's for what Flag Up uses.
+
+- The mailbox panel's tabs are icon buttons; one lights up while an item is held over it.
+- The rules tree: categories without a bar, round + and − buttons as marks.
+- A character of the other faction on the same realm is offered nowhere as a recipient (not tested: no such character yet).
 
 ## Part stacks (both flavors)
 

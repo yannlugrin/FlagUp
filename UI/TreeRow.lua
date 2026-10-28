@@ -40,6 +40,12 @@ local CATEGORY_HEIGHT, LINE_HEIGHT = 28, 22
 local SUBCATEGORY_INDENT, ITEM_INDENT = 14, 34
 local ICON_SIZE = 18
 local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar"
+-- Clients without the reputation list's atlases (Classic) draw the tree as their own reputation list does: no header
+-- bar, a round + or − button as both marks.
+local HAS_LIST_ATLASES = C_Texture.GetAtlasInfo("common-button-list-collapseExpand") ~= nil
+local PLUS_BUTTON_TEXTURE = "Interface\\Buttons\\UI-PlusButton-Up"
+local MINUS_BUTTON_TEXTURE = "Interface\\Buttons\\UI-MinusButton-Up"
+local BUTTON_MARK_SIZE = 16
 
 ---A tree row; createRow adds its regions the first time the row is used.
 ---@class FlagUp.TreeRow.Row: Button
@@ -57,19 +63,38 @@ local LINE_HIGHLIGHT_TEXTURE = "Interface\\FriendsFrame\\UI-FriendsFrame-Highlig
 ---@field ToggleButton Button over the open or closed mark, while the line has one
 ---@field line FlagUp.TreeLine the line shown
 
+---Shows a line's open or closed mark: the atlas given, or on Classic a round + or − button.
+---@param texture Texture
+---@param collapsed boolean
+---@param closedAtlas string
+---@param openAtlas string
+local function showMark(texture, collapsed, closedAtlas, openAtlas)
+    if HAS_LIST_ATLASES then
+        texture:SetAtlas(collapsed and closedAtlas or openAtlas, true)
+    else
+        texture:SetTexture(collapsed and PLUS_BUTTON_TEXTURE or MINUS_BUTTON_TEXTURE)
+        texture:SetSize(BUTTON_MARK_SIZE, BUTTON_MARK_SIZE)
+    end
+end
+
 ---@param row FlagUp.TreeRow.Row
 ---@param ruleLeft number where the Rule column starts
 local function createRow(row, ruleLeft)
-    -- A category is a header bar, as the game's reputation list draws its headers.
+    -- A category is a header bar, as the game's reputation list draws its headers; on Classic, its name alone,
+    -- highlighted as the other lines are.
     row.CategoryBackground = row:CreateTexture(nil, "BACKGROUND")
-    row.CategoryBackground:SetAtlas("common-button-list-collapseExpand")
     row.CategoryBackground:SetAllPoints()
 
     row.CategoryHighlight = row:CreateTexture(nil, "HIGHLIGHT")
-    row.CategoryHighlight:SetAtlas("common-button-list-collapseExpand")
     row.CategoryHighlight:SetBlendMode("ADD")
-    row.CategoryHighlight:SetAlpha(0.3)
     row.CategoryHighlight:SetAllPoints()
+    if HAS_LIST_ATLASES then
+        row.CategoryBackground:SetAtlas("common-button-list-collapseExpand")
+        row.CategoryHighlight:SetAtlas("common-button-list-collapseExpand")
+        row.CategoryHighlight:SetAlpha(0.3)
+    else
+        row.CategoryHighlight:SetTexture(LINE_HIGHLIGHT_TEXTURE)
+    end
 
     row.LineHighlight = row:CreateTexture(nil, "HIGHLIGHT")
     row.LineHighlight:SetTexture(LINE_HIGHLIGHT_TEXTURE)
@@ -148,12 +173,12 @@ function TreeRow.Init(row, line, ruleLeft)
     local hasStateIcon = isCategory and line.collapsed ~= nil
     row.StateIcon:SetShown(hasStateIcon)
     if hasStateIcon then
-        row.StateIcon:SetAtlas(line.collapsed and "common-button-list-plus" or "common-button-list-minus", true)
+        showMark(row.StateIcon, line.collapsed, "common-button-list-plus", "common-button-list-minus")
     end
     local hasToggle = line.kind == "subcategory" and line.collapsed ~= nil
     row.ToggleIcon:SetShown(hasToggle)
     if hasToggle then
-        row.ToggleIcon:SetAtlas(line.collapsed and "campaign_headericon_closed" or "campaign_headericon_open", true)
+        showMark(row.ToggleIcon, line.collapsed, "campaign_headericon_closed", "campaign_headericon_open")
     end
     -- The mark takes its own clicks: the rest of the row selects.
     local mark = (hasStateIcon and row.StateIcon) or (hasToggle and row.ToggleIcon) or nil

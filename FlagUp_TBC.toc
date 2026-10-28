@@ -1,0 +1,45 @@
+## Interface: 20506
+## Title: Flag Up
+## Notes: Mails the items you choose to your alts when you open a mailbox.
+## Notes-frFR: Envoie par courrier les objets choisis à vos personnages quand vous ouvrez une boîte aux lettres.
+## Category: Mail
+## Category-frFR: Courrier
+## Author: Mr Caillou
+## Version: @project-version@
+## IconTexture: Interface\AddOns\FlagUp\Media\Icon
+## SavedVariables: FlagUpDB
+## OptionalDeps: EllesmereUI
+## X-Website: https://github.com/yannlugrin/FlagUp
+## X-Github: https://github.com/yannlugrin/FlagUp
+## X-License: MIT
+## X-Curse-Project-ID: 1758443
+## X-Wago-ID: 96d08l6O
+
+Libs.xml
+
+Locales\enUS.lua
+Locales\frFR.lua
+
+Core\Core.lua
+Core\Store.lua
+Core\Characters.lua
+Core\Categories.lua
+Core\Rules.lua
+Core\Ignored.lua
+Core\Mailing.lua
+
+UI\Skin.lua
+UI\TreeRow.lua
+UI\CharacterIcon.lua
+UI\ItemDrop.lua
+UI\RulesWindow.lua
+UI\IgnoredList.lua
+UI\CharacterList.lua
+UI\IconPicker.lua
+UI\AddItemDialog.lua
+UI\AddCategoryDialog.lua
+UI\CharacterNameDialog.lua
+UI\Settings.lua
+UI\Launcher.lua
+UI\SideTab_Classic.lua
+UI\MailPanel.lua

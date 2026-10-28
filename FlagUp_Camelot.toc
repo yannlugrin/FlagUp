@@ -41,4 +41,5 @@ UI\AddCategoryDialog.lua
 UI\CharacterNameDialog.lua
 UI\Settings.lua
 UI\Launcher.lua
+UI\SideTab_Mainline.lua
 UI\MailPanel.lua

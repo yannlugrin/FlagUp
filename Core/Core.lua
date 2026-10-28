@@ -5,6 +5,7 @@ local addonName, ns = ...
 ---@class FlagUp.Namespace
 ---@field L table<string, string>
 ---@field IS_FOREVER boolean playing WoW: Forever
+---@field MAILS_ACROSS_FACTIONS boolean the game mails across factions between the player's own characters
 ---@field Print fun(msg: string)
 ---@field db table AceDB object
 ---@field data FlagUp.Data
@@ -28,11 +29,14 @@ local addonName, ns = ...
 ---@field CharacterNameDialog FlagUp.CharacterNameDialog
 ---@field SettingsPanel FlagUp.SettingsPanel
 ---@field Launcher FlagUp.Launcher
+---@field SideTab FlagUp.SideTab
 ---@field MailPanel FlagUp.MailPanel
 
 ns.L = LibStub("AceLocale-3.0"):GetLocale(addonName)
 -- Forever runs the retail API; its characters, households and professions differ.
 ns.IS_FOREVER = WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT
+-- Retail mails across factions between the player's own characters of one realm; Classic never does.
+ns.MAILS_ACROSS_FACTIONS = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local L = ns.L
 
 local title = C_AddOns.GetAddOnMetadata(addonName, "Title")

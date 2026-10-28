@@ -202,8 +202,9 @@ function Characters.RecordPlayer()
         class = select(2, UnitClass("player")) }
 end
 
----Whether mail goes from one character of the household to another. Never to itself. Outside Forever, mail crosses
----factions only between the player's own characters (known: typed ones may be another account's) of one realm.
+---Whether mail goes from one character of the household to another. Never to itself. On retail, mail crosses
+---factions only between the player's own characters (known: typed ones may be another account's) of one realm; on
+---Classic, never.
 ---@param sender string
 ---@param recipient string
 ---@return boolean
@@ -213,7 +214,7 @@ function Characters.CanMail(sender, recipient)
     local characters = Characters.PlayerHousehold().characters
     local from, to = characters[sender], characters[recipient]
     if not (from and to and from.faction and to.faction) or from.faction == to.faction then return true end
-    return not from.typed and not to.typed and realmOf(sender) == realmOf(recipient)
+    return ns.MAILS_ACROSS_FACTIONS and not from.typed and not to.typed and realmOf(sender) == realmOf(recipient)
 end
 
 ---The names of the characters of the household being played that logged in with Flag Up, by name.
