@@ -14,11 +14,13 @@ For **World of Warcraft: Forever**, **retail**, **Classic Era** (Season of Disco
 - **Shared by your characters.** The rules are the same for all your characters that can mail each other: on Forever, those of one ruleset and faction; on retail and Classic (Era and TBC Anniversary), those of a realm and its connected realms, both factions (on retail, mail goes to the other faction only between your own characters of one realm; on Classic, never); a character can override a rule for itself: another recipient, don't send, another number to keep, other qualities, full stacks or not.
 - **Any alt.** Pick from the characters you logged in with Flag Up, or type the name of an alt on another account. On retail and Classic, characters of the realm you play show without their realm.
 - **At the mailbox.** A panel next to the mailbox lists what will be sent, alt by alt, with the postage; uncheck an item to keep it this time. Then it sends mail after mail and shows each one sent, or failed with the game's reason.
+- **This time only.** At the mailbox, change how many of an item go, or drop an item on an alt's heading or items to send it all there; the rules stay as they are.
+- **Alt tabs.** Your alts with nothing to receive show as tabs beside the mailbox panel, with their class icon or one you pick; drop an item on one to send it all there. The rules window's Characters tab chooses which characters get a tab, changes their icon and forgets a typed name.
 - **Not worth the postage.** An item worth less to a vendor than its postage (30 copper a stack) starts unchecked, so you don't pay to mail it; check it to send it anyway. A setting turns this off, another one does the same for items no vendor buys.
 - **Automatic or on demand.** Send as soon as the mailbox opens, or only when you click Send. A key you choose (Shift by default) does the opposite while you hold it, like the game's auto-loot key.
 - **Ignore an item.** From the mailbox panel, stop offering an item, for all your characters or only the one you play. The rules window shows it ignored, and its Ignored tab lists every ignored item by category, to take one back.
 
-Show or hide the rules window with the minimap button or `/flagup open`. Right-click the button for a menu. The add-on compartment next to the minimap opens the settings.
+Show or hide the rules window with the minimap button, the tab with Flag Up's icon beside the mailbox panel or `/flagup open`. Right-click the minimap button for a menu. The add-on compartment next to the minimap opens the settings.
 
 ## Commands
 

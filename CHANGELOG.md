@@ -4,6 +4,8 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-29
+
 ### Added
 
 - Mailbox panel: change how many of an item go, this time only; the count's tooltip tells how many are in the bags.
@@ -32,5 +34,6 @@ All notable changes to Flag Up. The format follows [Keep a Changelog](https://ke
 - Items worth less than their postage start unchecked at the mailbox; a setting turns it off, another one does the same for items without a vendor price.
 - Settings in Options › AddOns, a minimap button, an add-on compartment entry and the `/flagup` commands.
 
-[Unreleased]: https://github.com/yannlugrin/FlagUp/compare/1.0.0...HEAD
+[Unreleased]: https://github.com/yannlugrin/FlagUp/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/yannlugrin/FlagUp/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/yannlugrin/FlagUp/releases/tag/1.0.0

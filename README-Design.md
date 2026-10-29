@@ -2,7 +2,7 @@
 
 The frames of Flag Up: their structure, and their functional and visual description. For the code, see [README-Technical.md](README-Technical.md); for players, [README.md](README.md). The mockups are on the [design canvas](https://claude.ai/artifact/JnnxuCGggEvhecWfqwneph).
 
-Flag Up is a World of Warcraft add-on for WoW: Forever (a Classic-era world with the modern game UI) and retail. At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
+Flag Up is a World of Warcraft add-on for WoW: Forever (a Classic-era world with the modern game UI), retail, Classic Era and TBC Anniversary. At a mailbox, the character being played mails the items its rules choose to the player's other characters. It only sends: it never takes mail from the inbox.
 
 ## Concepts
 
@@ -11,9 +11,9 @@ Flag Up is a World of Warcraft add-on for WoW: Forever (a Classic-era world with
 A recipient is one of the player's characters:
 
 - **Known**: every character that logged in with Flag Up is remembered.
-- **Typed**: a name the player types, for a character Flag Up hasn't seen, such as an alt on another account: "First Surname" on Forever; "Name-Realm" on retail, a name alone being on the realm being played, and the realm one mail reaches.
+- **Typed**: a name the player types, for a character Flag Up hasn't seen, such as an alt on another account: "First Surname" on Forever; "Name-Realm" on retail and Classic, a name alone being on the realm being played, and the realm one mail reaches.
 
-Mail only reaches some characters, so Flag Up keeps the characters and rules of each household apart. On Forever, a household is a ruleset and faction (PvP Alliance, PvP Horde, Normal Horde…). On retail, it is a realm and the realms connected to it, both factions; mail crosses factions only between the player's own characters (known ones) of one realm, so a rule that would send across factions otherwise keeps the items, as *Don't send*. The character being played sees all the rules of its household, with the overrides of every character of it, not only its own; it never sees another household. A typed character belongs to the household of the character that typed it, and to its faction. On retail, a realm connected to the household later brings its own household along: its characters, rules and ignored items join, and on a line both have, the household being played keeps its fields.
+Mail only reaches some characters, so Flag Up keeps the characters and rules of each household apart. On Forever, a household is a ruleset and faction (PvP Alliance, PvP Horde, Normal Horde…). On retail and Classic, it is a realm and the realms connected to it, both factions; on retail, mail crosses factions only between the player's own characters (known ones) of one realm, and on Classic never, so a rule that would send across factions otherwise keeps the items, as *Don't send*. The character being played sees all the rules of its household, with the overrides of every character of it, not only its own; it never sees another household. A typed character belongs to the household of the character that typed it, and to its faction. Outside Forever, a realm connected to the household later brings its own household along: its characters, rules and ignored items join, and on a line both have, the household being played keeps its fields.
 
 A known character that is renamed, which the game can force, keeps its rules and overrides: Flag Up recognises it at its next login.
 
@@ -49,7 +49,7 @@ An ignored item is never offered at the mailbox, whatever the rules say: it is n
 ## Design Constraints
 
 - **Look**: the default game look, built from the game's own templates; with EllesmereUI installed, the same frames take its theme through its skinning API. No custom-styled widgets.
-- **Names**: characters are shown as "First Surname" on Forever, which has no realms; on retail as "Name-Realm", without the realm being played.
+- **Names**: characters are shown as "First Surname" on Forever, which has no realms; on retail and Classic as "Name-Realm", without the realm being played.
 - **Item names** take their quality colour.
 
 ## Frames

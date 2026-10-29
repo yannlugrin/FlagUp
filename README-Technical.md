@@ -2,7 +2,7 @@
 
 Architecture notes and contribution guidance for developers working on Flag Up. For end-user documentation, see [README.md](README.md).
 
-> **Status: 1.0.0.** Update this file as the add-on changes.
+> **Status: 1.1.0.** Update this file as the add-on changes.
 
 ## File Map
 
